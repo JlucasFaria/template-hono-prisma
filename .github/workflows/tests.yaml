@@ -9,6 +9,23 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    # Isso substitui o "wait-for-postgres.js" de forma nativa no GitHub
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -19,5 +36,13 @@ jobs:
       - name: Prisma Generate
         run: bunx prisma generate
 
+      # Sincroniza o banco de dados antes dos testes
+      - name: Push Database Schema
+        run: bunx prisma db push
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/test_db
+
       - name: Run Tests
         run: bun run test
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/test_db
