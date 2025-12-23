@@ -1,3 +1,4 @@
+import "./config/env";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
