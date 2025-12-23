@@ -1,19 +1,28 @@
 import { Hono } from "hono";
-import prisma from "../db/client";
+import { zValidator } from "@hono/zod-validator";
+import { UserService } from "../services/user-service";
+import { createUserSchema } from "../schemas/user-schema";
 
 const userRoutes = new Hono();
+const userService = new UserService();
 
-userRoutes.post("/", async (c) => {
-  const body = await c.req.json();
-  const newUser = await prisma.user.create({
-    data: { email: body.email, name: body.name },
-  });
-  return c.json(newUser, 201);
+// Listar todos os utilizadores
+userRoutes.get("/", async (c) => {
+  const users = await userService.getAll();
+  return c.json(users);
 });
 
-userRoutes.get("/", async (c) => {
-  const users = await prisma.user.findMany();
-  return c.json(users);
+// Criar um novo utilizador com validação Zod
+userRoutes.post("/", zValidator("json", createUserSchema), async (c) => {
+  // Os dados aqui já chegam validados pelo middleware
+  const body = c.req.valid("json");
+
+  const newUser = await userService.create({
+    email: body.email,
+    name: body.name,
+  });
+
+  return c.json(newUser, 201);
 });
 
 export default userRoutes;
