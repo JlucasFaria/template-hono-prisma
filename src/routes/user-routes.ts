@@ -1,9 +1,27 @@
-import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { UserService } from "../services/user-service";
-import { createUserSchema } from "../schemas/user-schema";
+import { createUserSchema, UserSchema } from "../schemas/user-schema";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
-const userRoutes = new Hono();
+const userRoutes = new OpenAPIHono();
+
+// Definição da rota para o OpenAPI
+const listUsersRoute = createRoute({
+  method: "get",
+  path: "/",
+  responses: {
+    200: {
+      content: { "application/json": { schema: UserSchema.array() } },
+      description: "Lista de usuários recuperada com sucesso",
+    },
+  },
+});
+
+userRoutes.openapi(listUsersRoute, async (c) => {
+  const userService = new UserService();
+  const users = await userService.getAll();
+  return c.json(users, 200);
+});
 
 // Listar todos os utilizadores
 userRoutes.get("/", async (c) => {
