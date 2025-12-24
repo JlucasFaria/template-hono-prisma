@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import { UserService } from "../services/user-service";
 import { createUserSchema, UserSchema } from "../schemas/user-schema";
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
@@ -17,23 +16,37 @@ const listUsersRoute = createRoute({
   },
 });
 
-userRoutes.openapi(listUsersRoute, async (c) => {
-  const userService = new UserService();
-  const users = await userService.getAll();
-  return c.json(users, 200);
+// Definição da rota POST para o OpenAPI
+const createUserRoute = createRoute({
+  method: "post",
+  path: "/",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: createUserSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: { "application/json": { schema: UserSchema } },
+      description: "Usuário criado com sucesso",
+    },
+  },
 });
 
 // Listar todos os utilizadores
-userRoutes.get("/", async (c) => {
+userRoutes.openapi(listUsersRoute, async (c) => {
   const userService = new UserService();
   const users = await userService.getAll();
   return c.json(users);
 });
 
-// Criar um novo utilizador com validação Zod
-userRoutes.post("/", zValidator("json", createUserSchema), async (c) => {
-  // Os dados aqui já chegam validados pelo middleware
-  const body = c.req.valid("json");
+// Criar um novo utilizador (validação automática pelo OpenAPI)
+userRoutes.openapi(createUserRoute, async (c) => {
+  const body = c.req.valid("json"); // Já validado automaticamente pelo OpenAPIHono
   const userService = new UserService();
 
   const newUser = await userService.create({
