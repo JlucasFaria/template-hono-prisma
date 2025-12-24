@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "bun:test";
-import app from "../index";
-import prisma from "../db/client";
+import app from "../../../../src/index";
+import prisma from "../../../db/client";
 
 describe("User Routes", () => {
   beforeAll(async () => {

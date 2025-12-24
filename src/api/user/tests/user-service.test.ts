@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { UserService } from "./user-service";
-import prisma from "../db/client";
+import { UserService } from "../user-service";
+import prisma from "../../../db/client";
 
 const userService = new UserService();
 

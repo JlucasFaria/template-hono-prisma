@@ -1,4 +1,4 @@
-import prisma from "../db/client";
+import prisma from "../../db/client";
 
 export class UserService {
   async create(data: { email: string; name?: string }) {

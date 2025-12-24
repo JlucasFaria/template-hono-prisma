@@ -1,5 +1,5 @@
-import { UserService } from "../services/user-service";
-import { createUserSchema, UserSchema } from "../schemas/user-schema";
+import { UserService } from "./user-service";
+import { createUserSchema, UserSchema } from "./user-schema";
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 const userRoutes = new OpenAPIHono();
