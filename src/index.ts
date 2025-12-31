@@ -1,3 +1,4 @@
+// Configuração principal da aplicação Hono com OpenAPI
 import { env } from "./config/env";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
@@ -9,6 +10,7 @@ import { HTTPException } from "hono/http-exception";
 
 const app = new OpenAPIHono();
 
+// Configura autenticação JWT Bearer para OpenAPI
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
   scheme: "bearer",
@@ -18,6 +20,7 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
 app.use("*", logger());
 app.use("*", cors());
 
+// Documentação OpenAPI
 app.doc("/doc", {
   openapi: "3.0.0",
   info: {
@@ -30,8 +33,9 @@ app.get("/ui", swaggerUI({ url: "/doc" }));
 
 app.get("/", (c) => c.text("Servidor rodando com sucesso! 🚀"));
 
+// Tratamento global de erros
 app.onError((err, c) => {
-  // Se for uma exceção disparada pelo Hono (como 401 do JWT ou 400 do Zod)
+  // Exceções HTTP do Hono (401, 400, etc)
   if (err instanceof HTTPException) {
     return c.json(
       {
@@ -42,7 +46,7 @@ app.onError((err, c) => {
     );
   }
 
-  // Erros inesperados (crashes reais do servidor)
+  // Erros inesperados do servidor
   console.error(`[Fatal Error]: ${err.stack}`);
   return c.json(
     {

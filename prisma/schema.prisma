@@ -1,3 +1,4 @@
+// Schema Prisma - define estrutura do banco de dados
 generator client {
   provider        = "prisma-client-js"
   output          = "../generated/prisma"

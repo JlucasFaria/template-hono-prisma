@@ -1,3 +1,4 @@
+// Testes de integração das rotas de usuários
 import { describe, it, expect, beforeAll } from "bun:test";
 import app from "../../../../src/index";
 import prisma from "../../../db/client";
@@ -10,6 +11,7 @@ describe("User Routes", () => {
   beforeAll(async () => {
     await prisma.user.deleteMany();
 
+    // Gera token JWT para autenticação nos testes
     const payload = {
       id: 1,
       email: "test@example.com",

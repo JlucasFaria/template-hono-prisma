@@ -1,3 +1,4 @@
+// Rotas de usuários
 import { UserService } from "./user-service";
 import { createUserSchema, UserSchema } from "./user-schema";
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
@@ -44,26 +45,20 @@ const createUserRoute = createRoute({
   },
 });
 
-// Handler wrapper que aplica middleware apenas a esta rota específica
+// Wrapper para aplicar autenticação JWT em rotas específicas
 const protectedHandler = (
   handler: (c: Context<{ Variables: Variables }>) => Promise<Response>,
 ) => {
   return async (c: Context<{ Variables: Variables }>, _next: Next) => {
     let handlerResponse: Response | undefined;
-    // Cria um next customizado que chama o handler e armazena o resultado
     const customNext = async () => {
       handlerResponse = await handler(c);
     };
-    // Aplica autenticação - se falhar, retorna Response (401)
-    // Se passar, chama customNext que executa o handler
     const result = await authMiddleware(c, customNext);
-    // Se o middleware retornou uma Response (erro), retorna ela
-    // Caso contrário, retorna a resposta do handler
     return result ?? handlerResponse!;
   };
 };
 
-// GET
 userRoutes.openapi(
   listUsersRoute,
   protectedHandler(async (c) => {
@@ -73,7 +68,6 @@ userRoutes.openapi(
   }),
 );
 
-// POST
 userRoutes.openapi(createUserRoute, async (c) => {
   const body = c.req.valid("json");
   const userService = new UserService();

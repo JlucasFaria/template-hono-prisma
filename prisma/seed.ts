@@ -1,3 +1,4 @@
+// Script de seed para popular banco com dados iniciais
 import prisma from "../src/db/client";
 
 async function main() {

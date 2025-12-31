@@ -1,3 +1,4 @@
+// Cliente Prisma configurado com adapter PostgreSQL
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma";

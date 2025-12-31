@@ -1,3 +1,4 @@
+// Configuração do Prisma para migrations e schema
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 

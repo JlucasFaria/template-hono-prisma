@@ -1,3 +1,4 @@
+// Rotas de autenticação
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
@@ -33,7 +34,7 @@ authRoutes.openapi(loginRoute, async (c) => {
     return c.json({ error: "E-mail não encontrado" }, 401);
   }
 
-  // Payload do token (expira em 1 hora)
+  // Gera JWT com expiração de 1 hora
   const payload = {
     id: user.id,
     email: user.email,

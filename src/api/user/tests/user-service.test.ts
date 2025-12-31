@@ -1,3 +1,4 @@
+// Testes unitários do serviço de usuários
 import { describe, it, expect, beforeEach } from "bun:test";
 import { UserService } from "../user-service";
 import prisma from "../../../db/client";

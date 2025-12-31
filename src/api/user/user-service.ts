@@ -1,3 +1,4 @@
+// Serviço de negócio para operações com usuários
 import prisma from "../../db/client";
 
 export class UserService {
@@ -6,6 +7,7 @@ export class UserService {
       data,
     });
   }
+
   async getAll() {
     return await prisma.user.findMany();
   }
