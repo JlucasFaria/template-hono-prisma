@@ -16,7 +16,7 @@
     "db:migrate": "bunx prisma migrate dev",
     "db:generate": "bunx prisma generate",
     "db:studio": "bunx prisma studio",
-    "db:reset": "docker compose down -v && docker compose up -d && bunx prisma migrate dev",
+    "db:reset": "docker compose down -v && docker compose up -d && bunx prisma migrate dev && bun run db:seed",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."

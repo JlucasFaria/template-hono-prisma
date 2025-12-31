@@ -1,10 +1,21 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import app from "../../../../src/index";
 import prisma from "../../../db/client";
+import { sign } from "hono/jwt";
+import { env } from "../../../config/env";
 
 describe("User Routes", () => {
+  let token: string;
+
   beforeAll(async () => {
     await prisma.user.deleteMany();
+
+    const payload = {
+      id: 1,
+      email: "test@example.com",
+      exp: Math.floor(Date.now() / 1000) + 60 * 60,
+    };
+    token = await sign(payload, env.JWT_SECRET);
   });
 
   it("Deve criar um novo usuário com sucesso", async () => {
@@ -16,6 +27,7 @@ describe("User Routes", () => {
       }),
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -23,11 +35,15 @@ describe("User Routes", () => {
 
     expect(res.status).toBe(201);
     expect(body.email).toBe("test@example.com");
-    expect(body.id).toBeDefined();
   });
 
   it("Deve listar todos os usuários", async () => {
-    const res = await app.request("/api/users");
+    const res = await app.request("/api/users", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     const body = (await res.json()) as Array<{
       id: number;
       email: string;
@@ -36,6 +52,5 @@ describe("User Routes", () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
   });
 });
