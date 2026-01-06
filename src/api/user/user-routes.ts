@@ -1,20 +1,15 @@
-// Rotas de usuários
 import { UserService } from "./user-service";
-import { createUserSchema, UserSchema } from "./user-schema";
+import {
+  createUserSchema,
+  createUserResponseSchema,
+  listUsersResponseSchema,
+} from "./user-schema";
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { jwt } from "hono/jwt";
-import { env } from "../../config/env";
+import { authMiddleware, type AuthVariables } from "../../middlewares/auth";
+import { successResponse } from "../../utils/response";
 import type { Context, Next } from "hono";
 
-type Variables = {
-  jwtPayload: {
-    id: number;
-    email: string;
-  };
-};
-
-const userRoutes = new OpenAPIHono<{ Variables: Variables }>();
-const authMiddleware = jwt({ secret: env.JWT_SECRET });
+const userRoutes = new OpenAPIHono<{ Variables: AuthVariables }>();
 
 const listUsersRoute = createRoute({
   method: "get",
@@ -22,7 +17,9 @@ const listUsersRoute = createRoute({
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
-      content: { "application/json": { schema: UserSchema.array() } },
+      content: {
+        "application/json": { schema: listUsersResponseSchema },
+      },
       description: "Lista de usuários recuperada com sucesso",
     },
     401: { description: "Token inválido ou ausente" },
@@ -39,7 +36,9 @@ const createUserRoute = createRoute({
   },
   responses: {
     201: {
-      content: { "application/json": { schema: UserSchema } },
+      content: {
+        "application/json": { schema: createUserResponseSchema },
+      },
       description: "Usuário criado com sucesso",
     },
   },
@@ -47,9 +46,9 @@ const createUserRoute = createRoute({
 
 // Wrapper para aplicar autenticação JWT em rotas específicas
 const protectedHandler = (
-  handler: (c: Context<{ Variables: Variables }>) => Promise<Response>,
+  handler: (c: Context<{ Variables: AuthVariables }>) => Promise<Response>,
 ) => {
-  return async (c: Context<{ Variables: Variables }>, _next: Next) => {
+  return async (c: Context<{ Variables: AuthVariables }>, _next: Next) => {
     let handlerResponse: Response | undefined;
     const customNext = async () => {
       handlerResponse = await handler(c);
@@ -64,7 +63,7 @@ userRoutes.openapi(
   protectedHandler(async (c) => {
     const userService = new UserService();
     const users = await userService.getAll();
-    return c.json(users, 200);
+    return successResponse(c, users, 200);
   }),
 );
 
@@ -76,7 +75,7 @@ userRoutes.openapi(createUserRoute, async (c) => {
     name: body.name,
   });
 
-  return c.json(newUser, 201);
+  return successResponse(c, newUser, 201, "Usuário criado com sucesso");
 });
 
 export default userRoutes;
