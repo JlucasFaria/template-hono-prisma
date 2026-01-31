@@ -1,4 +1,3 @@
-// Testes de integração das rotas de usuários
 import { describe, it, expect, beforeAll } from "bun:test";
 import app from "../../../../src/index";
 import prisma from "../../../db/client";
@@ -33,10 +32,14 @@ describe("User Routes", () => {
       },
     });
 
-    const body = (await res.json()) as { email: string; id: number };
+    const body = (await res.json()) as {
+      success: true;
+      data: { email: string; id: number; name: string | null };
+    };
 
     expect(res.status).toBe(201);
-    expect(body.email).toBe("test@example.com");
+    expect(body.success).toBe(true);
+    expect(body.data.email).toBe("test@example.com");
   });
 
   it("Deve listar todos os usuários", async () => {
@@ -46,13 +49,17 @@ describe("User Routes", () => {
       },
     });
 
-    const body = (await res.json()) as Array<{
-      id: number;
-      email: string;
-      name?: string | null;
-    }>;
+    const body = (await res.json()) as {
+      success: true;
+      data: Array<{
+        id: number;
+        email: string;
+        name?: string | null;
+      }>;
+    };
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(body)).toBe(true);
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.data)).toBe(true);
   });
 });

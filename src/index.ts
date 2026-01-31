@@ -6,7 +6,9 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
-import { HTTPException } from "hono/http-exception";
+import { errorHandler } from "./middlewares/error-handler";
+import { requestIdMiddleware } from "./middlewares/request-id";
+import { rateLimitMiddleware } from "./middlewares/rate-limit";
 
 const app = new OpenAPIHono();
 
@@ -17,8 +19,11 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   bearerFormat: "JWT",
 });
 
+// Middlewares globais (ordem importa!)
+app.use("*", requestIdMiddleware); // Primeiro: adiciona ID à requisição
 app.use("*", logger());
 app.use("*", cors());
+app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit apenas nas rotas
 
 // Documentação OpenAPI
 app.doc("/doc", {
@@ -34,29 +39,7 @@ app.get("/ui", swaggerUI({ url: "/doc" }));
 app.get("/", (c) => c.text("Servidor rodando com sucesso! 🚀"));
 
 // Tratamento global de erros
-app.onError((err, c) => {
-  // Exceções HTTP do Hono (401, 400, etc)
-  if (err instanceof HTTPException) {
-    return c.json(
-      {
-        success: false,
-        error: err.message,
-      },
-      err.status,
-    );
-  }
-
-  // Erros inesperados do servidor
-  console.error(`[Fatal Error]: ${err.stack}`);
-  return c.json(
-    {
-      success: false,
-      error: "Erro interno do servidor",
-      message: err.message,
-    },
-    500,
-  );
-});
+app.onError(errorHandler);
 
 app.route("/api/users", userRoutes);
 app.route("/api/auth", authRoutes);

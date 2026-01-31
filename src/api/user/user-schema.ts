@@ -52,4 +52,27 @@ export const loginResponseSchema = z
   })
   .openapi("LoginResponse");
 
+// Schema de resposta padronizada para sucesso
+export const successResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z
+    .object({
+      success: z
+        .literal(true)
+        .openapi({ description: "Indica sucesso na operação" }),
+      data: dataSchema,
+      message: z
+        .string()
+        .optional()
+        .openapi({ description: "Mensagem opcional" }),
+    })
+    .openapi("SuccessResponse");
+
+// Schema de resposta para criação de usuário
+export const createUserResponseSchema = successResponseSchema(UserSchema);
+
+// Schema de resposta para lista de usuários
+export const listUsersResponseSchema = successResponseSchema(
+  UserSchema.array(),
+);
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
