@@ -1,4 +1,3 @@
-// src/middlewares/auth.ts
 import { jwt } from "hono/jwt";
 import { env } from "../config/env";
 import type { Context } from "hono";
