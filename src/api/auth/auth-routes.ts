@@ -3,7 +3,7 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
 import { UserService } from "../user/user-service";
-import { loginSchema, loginResponseSchema } from "../user/user-schema";
+import { loginSchema, loginResponseSchema } from "./auth-schema";
 
 const authRoutes = new OpenAPIHono();
 

@@ -1,78 +1,60 @@
-// Schemas Zod para validação e documentação OpenAPI
+// Zod schemas for user validation and OpenAPI documentation
 import { z } from "@hono/zod-openapi";
+import { successResponseSchema } from "../../schemas/response";
+import { paginationMetaSchema } from "../../schemas/pagination";
 
 export const UserSchema = z
   .object({
     id: z.number().openapi({ example: 1 }),
     email: z.email().openapi({ example: "dev@test.com" }),
-    name: z.string().nullable().openapi({ example: "João Silva" }),
+    name: z.string().nullable().openapi({ example: "John Doe" }),
     createdAt: z
       .string()
       .refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid datetime string",
       })
-      .openapi({ description: "Data de criação" }),
+      .openapi({ description: "Creation date" }),
     updatedAt: z
       .string()
       .refine((val) => !isNaN(Date.parse(val)), {
         message: "Invalid datetime string",
       })
-      .openapi({ description: "Data de atualização" }),
+      .openapi({ description: "Last update date" }),
   })
   .openapi("User");
 
 export const createUserSchema = z
   .object({
     email: z.email().openapi({
-      description: "E-mail do novo usuário",
-      example: "novo@exemplo.com",
+      description: "New user email",
+      example: "new@example.com",
     }),
     name: z.string().min(2).optional().openapi({
-      description: "Nome do usuário (opcional)",
-      example: "João Silva",
+      description: "User name (optional)",
+      example: "John Doe",
+    }),
+    password: z.string().min(8).openapi({
+      description: "User password",
+      example: "secret123",
     }),
   })
   .openapi("CreateUserInput");
 
-export const loginSchema = z
-  .object({
-    email: z.string().openapi({
-      example: "admin@template.com",
-      description: "User's registered email address",
-    }),
-  })
-  .openapi("LoginInput");
-
-export const loginResponseSchema = z
-  .object({
-    token: z.string().openapi({
-      description:
-        "JWT Token generated for authentication on protected routes.",
-    }),
-  })
-  .openapi("LoginResponse");
-
-// Schema de resposta padronizada para sucesso
-export const successResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z
-    .object({
-      success: z
-        .literal(true)
-        .openapi({ description: "Indica sucesso na operação" }),
-      data: dataSchema,
-      message: z
-        .string()
-        .optional()
-        .openapi({ description: "Mensagem opcional" }),
-    })
-    .openapi("SuccessResponse");
-
-// Schema de resposta para criação de usuário
+// User creation response schema
 export const createUserResponseSchema = successResponseSchema(UserSchema);
 
-// Schema de resposta para lista de usuários
+// User list response schema
 export const listUsersResponseSchema = successResponseSchema(
   UserSchema.array(),
 );
+
+// Paginated user list response schema
+export const paginatedUsersResponseSchema = z
+  .object({
+    success: z.literal(true),
+    data: UserSchema.array(),
+    pagination: paginationMetaSchema,
+  })
+  .openapi("PaginatedUsersResponse");
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
