@@ -12,7 +12,11 @@ describe("UserService", () => {
   });
 
   it("deve criar um usuário no banco de dados", async () => {
-    const userData = { email: "dev@test.com", name: "Dev Test" };
+    const userData = {
+      email: "dev@test.com",
+      name: "Dev Test",
+      password: "secret1234",
+    };
     const user = await userService.create(userData);
 
     expect(user).toHaveProperty("id");
@@ -20,10 +24,16 @@ describe("UserService", () => {
   });
 
   it("deve retornar todos os usuários cadastrados", async () => {
-    await userService.create({ email: "user1@test.com" });
-    await userService.create({ email: "user2@test.com" });
+    await userService.create({
+      email: "user1@test.com",
+      password: "secret1234",
+    });
+    await userService.create({
+      email: "user2@test.com",
+      password: "secret1234",
+    });
 
-    const users = await userService.getAll();
-    expect(users.length).toBe(2);
+    const result = await userService.getAll();
+    expect(result.users.length).toBe(2);
   });
 });

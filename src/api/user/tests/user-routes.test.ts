@@ -25,6 +25,7 @@ describe("User Routes", () => {
       body: JSON.stringify({
         email: "test@example.com",
         name: "Test User",
+        password: "secret1234",
       }),
       headers: {
         "Content-Type": "application/json",

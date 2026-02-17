@@ -18,6 +18,7 @@ export class AuthService {
   async validateRefreshToken(token: string) {
     const refreshToken = await this.prisma.refreshToken.findUnique({
       where: { token },
+      include: { user: { select: { id: true, email: true } } },
     });
 
     if (!refreshToken) return null;
