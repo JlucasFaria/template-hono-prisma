@@ -22,7 +22,15 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
 // Middlewares globais (ordem importa!)
 app.use("*", requestIdMiddleware); // Primeiro: adiciona ID à requisição
 app.use("*", logger());
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(","),
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400,
+  }),
+);
 app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit apenas nas rotas
 
 // Documentação OpenAPI

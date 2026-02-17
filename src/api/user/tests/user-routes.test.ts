@@ -25,10 +25,10 @@ describe("User Routes", () => {
       body: JSON.stringify({
         email: "test@example.com",
         name: "Test User",
+        password: "secret1234",
       }),
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -56,10 +56,17 @@ describe("User Routes", () => {
         email: string;
         name?: string | null;
       }>;
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
     };
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(Array.isArray(body.data)).toBe(true);
+    expect(body.pagination).toBeDefined();
   });
 });
