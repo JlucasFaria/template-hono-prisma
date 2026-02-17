@@ -4,11 +4,11 @@ import { successResponseSchema } from "../../schemas/response";
 
 export const loginSchema = z
   .object({
-    email: z.string().openapi({
+    email: z.email().openapi({
       example: "admin@template.com",
       description: "User's registered email address",
     }),
-    password: z.string().openapi({
+    password: z.string().min(1).openapi({
       description: "User password",
       example: "secret123",
     }),
@@ -27,7 +27,7 @@ export const authResponseSchema = successResponseSchema(loginResponseSchema);
 
 export const refreshTokenSchema = z
   .object({
-    refreshToken: z.string().openapi({
+    refreshToken: z.string().min(1).openapi({
       description: "Refresh token for obtaining new access tokens",
     }),
   })

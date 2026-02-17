@@ -43,11 +43,6 @@ export const createUserSchema = z
 // User creation response schema
 export const createUserResponseSchema = successResponseSchema(UserSchema);
 
-// User list response schema
-export const listUsersResponseSchema = successResponseSchema(
-  UserSchema.array(),
-);
-
 // Paginated user list response schema
 export const paginatedUsersResponseSchema = z
   .object({

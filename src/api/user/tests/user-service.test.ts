@@ -21,6 +21,7 @@ describe("UserService", () => {
 
     expect(user).toHaveProperty("id");
     expect(user.email).toBe(userData.email);
+    expect(user).not.toHaveProperty("password");
   });
 
   it("deve retornar todos os usuários cadastrados", async () => {

@@ -17,6 +17,8 @@ import {
 import { successResponse } from "../../utils/response";
 
 const authRoutes = new OpenAPIHono();
+const userService = new UserService();
+const authService = new AuthService();
 
 async function generateAccessToken(user: { id: number; email: string }) {
   const payload = {
@@ -111,8 +113,6 @@ const logoutRoute = createRoute({
 // === Login Handler ===
 authRoutes.openapi(loginRoute, async (c) => {
   const { email, password } = c.req.valid("json");
-  const userService = new UserService();
-  const authService = new AuthService();
 
   const user = await userService.findByEmail(email);
 
@@ -134,7 +134,6 @@ authRoutes.openapi(loginRoute, async (c) => {
 
 authRoutes.openapi(refreshRoute, async (c) => {
   const { refreshToken } = c.req.valid("json");
-  const authService = new AuthService();
 
   const storedToken = await authService.validateRefreshToken(refreshToken);
 
@@ -162,7 +161,6 @@ authRoutes.openapi(refreshRoute, async (c) => {
 // === Logout Handler ===
 authRoutes.openapi(logoutRoute, async (c) => {
   const { refreshToken } = c.req.valid("json");
-  const authService = new AuthService();
 
   try {
     await authService.revokeRefreshToken(refreshToken);

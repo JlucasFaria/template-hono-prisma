@@ -15,6 +15,7 @@ import {
 } from "../../schemas/response";
 
 const userRoutes = new OpenAPIHono<{ Variables: AuthVariables }>();
+const userService = new UserService();
 
 // ─── Route Definitions ──────────────────────────────────────────
 
@@ -80,7 +81,6 @@ userRoutes.get("/*", authMiddleware);
 userRoutes.openapi(listUsersRoute, async (c) => {
   const page = c.req.query("page");
   const limit = c.req.query("limit");
-  const userService = new UserService();
   const result = await userService.getAll(page, limit);
   return c.json(
     { success: true, data: result.users, pagination: result.pagination },
@@ -90,7 +90,6 @@ userRoutes.openapi(listUsersRoute, async (c) => {
 
 userRoutes.openapi(createUserRoute, async (c) => {
   const body = c.req.valid("json");
-  const userService = new UserService();
   const newUser = await userService.create({
     email: body.email,
     name: body.name,
