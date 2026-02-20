@@ -9,6 +9,7 @@ import authRoutes from "./api/auth/auth-routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
 import { rateLimitMiddleware } from "./middlewares/rate-limit";
+import prisma from "./db/client";
 
 const app = new OpenAPIHono();
 
@@ -43,6 +44,29 @@ app.doc("/doc", {
 });
 
 app.get("/ui", swaggerUI({ url: "/doc" }));
+
+app.get("/health", async (c) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return c.json(
+      {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        database: "connected",
+      },
+      200,
+    );
+  } catch {
+    return c.json(
+      {
+        status: "error",
+        timestamp: new Date().toISOString(),
+        database: "disconnected",
+      },
+      503,
+    );
+  }
+});
 
 app.get("/", (c) => c.text("Servidor rodando com sucesso! 🚀"));
 
