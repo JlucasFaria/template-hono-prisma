@@ -1,4 +1,4 @@
-// Configuração principal da aplicação Hono com OpenAPI
+// Main application setup: middleware registration, routes, and OpenAPI config
 import { env } from "./config/env";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
@@ -13,15 +13,15 @@ import prisma from "./db/client";
 
 const app = new OpenAPIHono();
 
-// Configura autenticação JWT Bearer para OpenAPI
+// Register JWT Bearer auth scheme for OpenAPI/Swagger
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
   scheme: "bearer",
   bearerFormat: "JWT",
 });
 
-// Middlewares globais (ordem importa!)
-app.use("*", requestIdMiddleware); // Primeiro: adiciona ID à requisição
+// Global middlewares (order matters!)
+app.use("*", requestIdMiddleware); // First: attach request ID
 app.use("*", logger());
 app.use(
   "*",
@@ -32,14 +32,14 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit apenas nas rotas
+app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit only on API routes
 
-// Documentação OpenAPI
+// OpenAPI documentation
 app.doc("/doc", {
   openapi: "3.0.0",
   info: {
     version: "1.0.0",
-    title: "Minha API ...",
+    title: "Hono Prisma API",
   },
 });
 
@@ -68,17 +68,17 @@ app.get("/health", async (c) => {
   }
 });
 
-app.get("/", (c) => c.text("Servidor rodando com sucesso! 🚀"));
+app.get("/", (c) => c.text("Server is running!"));
 
-// Tratamento global de erros
+// Global error handler
 app.onError(errorHandler);
 
 app.route("/api/users", userRoutes);
 app.route("/api/auth", authRoutes);
 
 const port = env.PORT;
-console.log(`\n🚀 Servidor rodando em: http://localhost:${port}`);
-console.log(`📚 Swagger UI: http://localhost:${port}/ui`);
-console.log(`📄 OpenAPI Doc: http://localhost:${port}/doc\n`);
+console.log(`\n🚀 Server running at: http://localhost:${port}`);
+console.log(`📚 Swagger UI:        http://localhost:${port}/ui`);
+console.log(`📄 OpenAPI doc:       http://localhost:${port}/doc\n`);
 
 export default app;
