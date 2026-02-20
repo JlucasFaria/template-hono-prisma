@@ -1,18 +1,18 @@
-// src/middlewares/error-handler.ts
+// Global error handler: maps known errors to appropriate HTTP responses
 import { HTTPException } from "hono/http-exception";
 import type { ErrorHandler } from "hono";
 import { ZodError } from "zod";
 import { env } from "../config/env";
 
 export const errorHandler: ErrorHandler = (err, c) => {
-  // Erros de validação Zod
+  // Zod validation errors
   if (err instanceof ZodError) {
     return c.json(
       {
         success: false,
-        error: "Erro de validação",
+        error: "Validation error",
         details: err.issues.map((e) => ({
-          path: e.path.map(String).join("."), // Converte números para string
+          path: e.path.map(String).join("."), // Convert array indices to string
           message: e.message,
         })),
       },
@@ -20,7 +20,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
     );
   }
 
-  // Exceções HTTP do Hono (401, 400, etc)
+  // Hono HTTP exceptions
   if (err instanceof HTTPException) {
     return c.json(
       {
@@ -31,8 +31,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
     );
   }
 
-  // Erros do Prisma (duplicação de registro)
-  // Verifica se é um erro do Prisma com código P2002
+  // Prisma P2002 — unique constraint violation (duplicate record)
   if (
     err &&
     typeof err === "object" &&
@@ -43,14 +42,24 @@ export const errorHandler: ErrorHandler = (err, c) => {
     return c.json(
       {
         success: false,
-        error: "Registro duplicado",
-        message: "Já existe um registro com esses dados",
+        error: "Email already in use",
       },
       409,
     );
   }
 
-  // Erros inesperados do servidor
+  // Prisma P2025 — record not found (update/delete on non-existent record)
+  if (
+    err &&
+    typeof err === "object" &&
+    "code" in err &&
+    typeof err.code === "string" &&
+    err.code === "P2025"
+  ) {
+    return c.json({ success: false, error: "Record not found" }, 404);
+  }
+
+  // Unexpected server errors
   const errorMessage = err instanceof Error ? err.message : String(err);
   const errorStack = err instanceof Error ? err.stack : undefined;
 
@@ -58,7 +67,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
   return c.json(
     {
       success: false,
-      error: "Erro interno do servidor",
+      error: "Internal server error",
       message: env.NODE_ENV === "development" ? errorMessage : undefined,
     },
     500,
