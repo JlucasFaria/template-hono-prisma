@@ -15,7 +15,7 @@ export interface ErrorResponse {
 type StatusCode = 200 | 201 | 202 | 400 | 401 | 403 | 404 | 409 | 500;
 
 /**
- * Retorna uma resposta de sucesso padronizada
+ * Returns a standardized success response
  */
 export function successResponse<T, S extends StatusCode = 200>(
   c: Context,
@@ -34,7 +34,7 @@ export function successResponse<T, S extends StatusCode = 200>(
 }
 
 /**
- * Retorna uma resposta de erro padronizada
+ * Returns a standardized error response
  */
 export function errorResponse(
   c: Context,

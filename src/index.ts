@@ -1,26 +1,28 @@
-// Configuração principal da aplicação Hono com OpenAPI
+// Main application setup: middleware registration, routes, and OpenAPI config
 import { env } from "./config/env";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { bodyLimit } from "hono/body-limit";
 import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
 import { rateLimitMiddleware } from "./middlewares/rate-limit";
+import prisma from "./db/client";
 
 const app = new OpenAPIHono();
 
-// Configura autenticação JWT Bearer para OpenAPI
+// Register JWT Bearer auth scheme for OpenAPI/Swagger
 app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
   type: "http",
   scheme: "bearer",
   bearerFormat: "JWT",
 });
 
-// Middlewares globais (ordem importa!)
-app.use("*", requestIdMiddleware); // Primeiro: adiciona ID à requisição
+// Global middlewares (order matters!)
+app.use("*", requestIdMiddleware); // First: attach request ID
 app.use("*", logger());
 app.use(
   "*",
@@ -31,30 +33,62 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit apenas nas rotas
+app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit only on API routes
+app.use("/api/*", bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1MB
 
-// Documentação OpenAPI
+// OpenAPI documentation
 app.doc("/doc", {
   openapi: "3.0.0",
   info: {
     version: "1.0.0",
-    title: "Minha API ...",
+    title: "Hono Prisma API",
   },
 });
 
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
-app.get("/", (c) => c.text("Servidor rodando com sucesso! 🚀"));
+app.get("/health", async (c) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return c.json(
+      {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        database: "connected",
+      },
+      200,
+    );
+  } catch {
+    return c.json(
+      {
+        status: "error",
+        timestamp: new Date().toISOString(),
+        database: "disconnected",
+      },
+      503,
+    );
+  }
+});
 
-// Tratamento global de erros
+app.get("/", (c) => c.text("Server is running!"));
+
+// Global error handler
 app.onError(errorHandler);
 
 app.route("/api/users", userRoutes);
 app.route("/api/auth", authRoutes);
 
 const port = env.PORT;
-console.log(`\n🚀 Servidor rodando em: http://localhost:${port}`);
-console.log(`📚 Swagger UI: http://localhost:${port}/ui`);
-console.log(`📄 OpenAPI Doc: http://localhost:${port}/doc\n`);
+console.log(`\n🚀 Server running at: http://localhost:${port}`);
+console.log(`📚 Swagger UI:        http://localhost:${port}/ui`);
+console.log(`📄 OpenAPI doc:       http://localhost:${port}/doc\n`);
+
+// Graceful shutdown: disconnect Prisma on SIGINT (Ctrl+C) and SIGTERM (Docker/K8s)
+const shutdown = async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 export default app;
