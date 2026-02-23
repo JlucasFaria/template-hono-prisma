@@ -1,4 +1,4 @@
-// src/utils/pagination.ts
+// Pagination utilities: parse query params and build pagination metadata
 
 export interface PaginationParams {
   page?: number;
@@ -20,7 +20,7 @@ export interface PaginatedResponse<T> {
 }
 
 /**
- * Extrai e valida parâmetros de paginação da query string
+ * Parses and validates pagination parameters from the query string
  */
 export function getPaginationParams(
   page?: string | number,
@@ -41,7 +41,7 @@ export function getPaginationParams(
 }
 
 /**
- * Cria metadata de paginação
+ * Builds pagination metadata from total count and current params
  */
 export function createPaginationMeta(
   page: number,

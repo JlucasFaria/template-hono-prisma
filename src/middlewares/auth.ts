@@ -12,7 +12,7 @@ export type AuthVariables = {
 
 export const authMiddleware = jwt({ secret: env.JWT_SECRET });
 
-// Helper para extrair payload do JWT de forma type-safe
+// Helper to extract the JWT payload in a type-safe way
 export function getAuthPayload(c: Context<{ Variables: AuthVariables }>) {
   return c.get("jwtPayload");
 }
