@@ -83,4 +83,12 @@ console.log(`\n🚀 Server running at: http://localhost:${port}`);
 console.log(`📚 Swagger UI:        http://localhost:${port}/ui`);
 console.log(`📄 OpenAPI doc:       http://localhost:${port}/doc\n`);
 
+// Graceful shutdown: disconnect Prisma on SIGINT (Ctrl+C) and SIGTERM (Docker/K8s)
+const shutdown = async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
 export default app;
