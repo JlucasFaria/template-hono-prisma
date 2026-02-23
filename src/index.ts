@@ -4,6 +4,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { bodyLimit } from "hono/body-limit";
 import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
 import { errorHandler } from "./middlewares/error-handler";
@@ -33,6 +34,7 @@ app.use(
   }),
 );
 app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit only on API routes
+app.use("/api/*", bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1MB
 
 // OpenAPI documentation
 app.doc("/doc", {
