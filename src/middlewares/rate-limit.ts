@@ -23,6 +23,9 @@ export const rateLimitMiddleware = (
   windowMs = 60000, // 1 minute
 ): MiddlewareHandler => {
   return async (c, next) => {
+    // NOTE: X-Forwarded-For can be spoofed by clients. In production, ensure
+    // your reverse proxy (nginx, Cloudflare) sets this header and strips
+    // any client-provided values before they reach this middleware.
     const ip =
       c.req.header("x-forwarded-for") ||
       c.req.header("cf-connecting-ip") ||

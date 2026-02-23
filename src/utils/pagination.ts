@@ -26,8 +26,8 @@ export function getPaginationParams(
   page?: string | number,
   limit?: string | number,
 ): { page: number; limit: number; skip: number } {
-  const pageNum = page ? Number(page) : 1;
-  const limitNum = limit ? Number(limit) : 10;
+  const pageNum = page && !isNaN(Number(page)) ? Number(page) : 1;
+  const limitNum = limit && !isNaN(Number(limit)) ? Number(limit) : 10;
 
   const validPage = Math.max(1, pageNum);
   const validLimit = Math.min(100, Math.max(1, limitNum)); // Max 100 items

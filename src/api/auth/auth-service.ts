@@ -35,6 +35,7 @@ export class AuthService {
     await this.prisma.refreshToken.delete({ where: { token } });
   }
 
+  // Reserved for "logout all devices" flows (e.g. password change, account compromise)
   async revokeAllUserTokens(userId: number) {
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
   }
