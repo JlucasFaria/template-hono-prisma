@@ -8,17 +8,10 @@ export const UserSchema = z
     id: z.number().openapi({ example: 1 }),
     email: z.email().openapi({ example: "dev@test.com" }),
     name: z.string().nullable().openapi({ example: "John Doe" }),
-    createdAt: z
-      .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid datetime string",
-      })
-      .openapi({ description: "Creation date" }),
+    createdAt: z.string().datetime().openapi({ description: "Creation date" }),
     updatedAt: z
       .string()
-      .refine((val) => !isNaN(Date.parse(val)), {
-        message: "Invalid datetime string",
-      })
+      .datetime()
       .openapi({ description: "Last update date" }),
   })
   .openapi("User");

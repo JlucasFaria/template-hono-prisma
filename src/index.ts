@@ -27,7 +27,10 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(","),
+    origin:
+      env.CORS_ORIGIN === "*"
+        ? "*"
+        : env.CORS_ORIGIN.split(",").map((s) => s.trim()),
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization"],
     maxAge: 86400,
