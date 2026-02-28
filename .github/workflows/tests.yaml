@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Isso substitui o "wait-for-postgres.js" de forma nativa no GitHub
+    # Native GitHub Actions health check replaces manual wait-for-postgres scripts
     services:
       postgres:
         image: postgres:latest
@@ -36,7 +36,7 @@ jobs:
       - name: Prisma Generate
         run: bunx prisma generate
 
-      # Sincroniza o banco de dados antes dos testes
+      # Sync the database schema before running tests
       - name: Push Database Schema
         run: bunx prisma db push
         env:

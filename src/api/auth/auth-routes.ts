@@ -14,7 +14,7 @@ import {
   errorResponseSchema,
   validationErrorResponseSchema,
 } from "../../schemas/response";
-import { successResponse } from "../../utils/response";
+import { successResponse, errorResponse } from "../../utils/response";
 
 const authRoutes = new OpenAPIHono();
 const userService = new UserService();
@@ -117,13 +117,13 @@ authRoutes.openapi(loginRoute, async (c) => {
   const user = await userService.findByEmail(email);
 
   if (!user) {
-    return c.json({ success: false, error: "Invalid credentials" }, 401);
+    return errorResponse(c, "Invalid credentials", 401);
   }
 
   const isValid = await userService.verifyPassword(user.password, password);
 
   if (!isValid) {
-    return c.json({ success: false, error: "Invalid credentials" }, 401);
+    return errorResponse(c, "Invalid credentials", 401);
   }
 
   const accessToken = await generateAccessToken(user);
@@ -138,10 +138,7 @@ authRoutes.openapi(refreshRoute, async (c) => {
   const storedToken = await authService.validateRefreshToken(refreshToken);
 
   if (!storedToken) {
-    return c.json(
-      { success: false, error: "Invalid or expired refresh token" },
-      401,
-    );
+    return errorResponse(c, "Invalid or expired refresh token", 401);
   }
 
   await authService.revokeRefreshToken(refreshToken);
