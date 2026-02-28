@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+// Integration tests for User Routes — sends real HTTP requests to the Hono app
+import { describe, it, expect, beforeAll, beforeEach } from "bun:test";
 import app from "../../../../src/index";
 import prisma from "../../../db/client";
 import { sign } from "hono/jwt";
@@ -7,10 +8,10 @@ import { env } from "../../../config/env";
 describe("User Routes", () => {
   let token: string;
 
+  // Generate JWT token once — we only need to do this once since
+  // it doesn't depend on database state. The auth middleware validates
+  // the signature, not whether the user exists in the DB.
   beforeAll(async () => {
-    await prisma.user.deleteMany();
-
-    // Gera token JWT para autenticação nos testes
     const payload = {
       id: 1,
       email: "test@example.com",
@@ -19,54 +20,165 @@ describe("User Routes", () => {
     token = await sign(payload, env.JWT_SECRET);
   });
 
-  it("Deve criar um novo usuário com sucesso", async () => {
-    const res = await app.request("/api/users", {
-      method: "POST",
-      body: JSON.stringify({
-        email: "test@example.com",
-        name: "Test User",
-        password: "secret1234",
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const body = (await res.json()) as {
-      success: true;
-      data: { email: string; id: number; name: string | null };
-    };
-
-    expect(res.status).toBe(201);
-    expect(body.success).toBe(true);
-    expect(body.data.email).toBe("test@example.com");
+  // Clean the database before each test to ensure test isolation.
+  // This prevents one test's data from affecting another.
+  beforeEach(async () => {
+    await prisma.user.deleteMany();
   });
 
-  it("Deve listar todos os usuários", async () => {
-    const res = await app.request("/api/users", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  // ─── POST /api/users ─────────────────────────────────────────
+
+  describe("POST /api/users", () => {
+    it("should create a new user and return 201", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          name: "Test User",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const body = (await res.json()) as {
+        success: true;
+        data: { email: string; id: number; name: string | null };
+      };
+
+      expect(res.status).toBe(201);
+      expect(body.success).toBe(true);
+      expect(body.data.email).toBe("test@example.com");
+      // Password must never be returned in the API response
+      expect(body.data).not.toHaveProperty("password");
     });
 
-    const body = (await res.json()) as {
-      success: true;
-      data: Array<{
-        id: number;
-        email: string;
-        name?: string | null;
-      }>;
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-      };
-    };
+    it("should return 400 when password is missing", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          name: "Test User",
+          // password field is intentionally omitted
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-    expect(res.status).toBe(200);
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.pagination).toBeDefined();
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when password is shorter than 8 characters", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          name: "Test User",
+          password: "short",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 409 when email is already in use", async () => {
+      // First registration — should succeed
+      await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "duplicate@example.com",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      // Second registration with the same email — should conflict
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "duplicate@example.com",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(409);
+    });
+  });
+
+  // ─── GET /api/users ──────────────────────────────────────────
+
+  describe("GET /api/users", () => {
+    it("should return 401 when no auth token is provided", async () => {
+      const res = await app.request("/api/users");
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return 401 when an invalid auth token is provided", async () => {
+      const res = await app.request("/api/users", {
+        headers: { Authorization: "Bearer invalid.token.here" },
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("should return paginated user list with a valid auth token", async () => {
+      const res = await app.request("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const body = (await res.json()) as {
+        success: true;
+        data: Array<{ id: number; email: string; name?: string | null }>;
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      };
+
+      expect(res.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.pagination).toBeDefined();
+    });
+
+    it("should respect pagination params: return correct page and limit", async () => {
+      // Create 3 users so we have data to paginate
+      for (let i = 1; i <= 3; i++) {
+        await app.request("/api/users", {
+          method: "POST",
+          body: JSON.stringify({
+            email: `user${i}@example.com`,
+            password: "secret1234",
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Request page 1 with a limit of 2 — should return 2 users out of 3
+      const res = await app.request("/api/users?page=1&limit=2", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const body = (await res.json()) as {
+        success: true;
+        data: Array<{ id: number; email: string }>;
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      };
+
+      expect(res.status).toBe(200);
+      expect(body.data.length).toBe(2);
+      expect(body.pagination.page).toBe(1);
+      expect(body.pagination.limit).toBe(2);
+      expect(body.pagination.total).toBe(3);
+      expect(body.pagination.totalPages).toBe(2);
+    });
   });
 });
