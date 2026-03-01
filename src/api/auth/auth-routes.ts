@@ -156,6 +156,9 @@ authRoutes.openapi(refreshRoute, async (c) => {
 });
 
 // === Logout Handler ===
+// NOTE: Stateless JWT limitation — revoking the refresh token prevents new access tokens
+// from being issued, but the current access token remains valid until it expires (~1h).
+// For immediate revocation, a token blacklist (e.g. Redis) would be required.
 authRoutes.openapi(logoutRoute, async (c) => {
   const { refreshToken } = c.req.valid("json");
 

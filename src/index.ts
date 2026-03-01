@@ -4,6 +4,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
 import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
@@ -22,7 +23,8 @@ app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
 });
 
 // Global middlewares (order matters!)
-app.use("*", requestIdMiddleware); // First: attach request ID
+app.use("*", secureHeaders()); // Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+app.use("*", requestIdMiddleware); // Attach request ID
 app.use("*", logger());
 app.use(
   "*",
