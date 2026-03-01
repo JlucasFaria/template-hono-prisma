@@ -12,7 +12,7 @@ export interface ErrorResponse {
   details?: unknown;
 }
 
-type StatusCode = 200 | 201 | 202 | 400 | 401 | 403 | 404 | 409 | 500;
+type StatusCode = 200 | 201 | 202 | 400 | 401 | 403 | 404 | 409 | 429 | 500 | 503;
 
 /**
  * Returns a standardized success response
