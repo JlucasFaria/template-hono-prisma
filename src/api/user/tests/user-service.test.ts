@@ -40,6 +40,22 @@ describe("UserService", () => {
 
       expect(result.users.length).toBe(2);
     });
+    it("should return users ordered by id ascending", async () => {
+      const first = await userService.create({
+        email: "user1@test.com",
+        password: "secret1234",
+      });
+      const second = await userService.create({
+        email: "user2@test.com",
+        password: "secret1234",
+      });
+
+      const result = await userService.getAll();
+
+      expect(result.users[0]?.id).toBe(first.id);
+      expect(result.users[1]?.id).toBe(second.id);
+    });
+
     it("should return correct pagination metadata", async () => {
       await userService.create({
         email: "user1@test.com",

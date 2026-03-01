@@ -38,6 +38,7 @@ export class UserService {
       this.prisma.user.findMany({
         skip: params.skip,
         take: params.limit,
+        orderBy: { id: "asc" },
         select: {
           id: true,
           email: true,
