@@ -1,10 +1,5 @@
 // Pagination utilities: parse query params and build pagination metadata
 
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-
 export interface PaginationMeta {
   page: number;
   limit: number;
