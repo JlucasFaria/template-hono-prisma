@@ -13,7 +13,7 @@ jobs:
     # Native GitHub Actions health check replaces manual wait-for-postgres scripts
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:16
         env:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: password
