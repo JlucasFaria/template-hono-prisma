@@ -19,7 +19,8 @@
     "db:reset": "docker compose down -v && docker compose up -d && bunx prisma migrate dev && bun run db:seed",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@prisma/config": "^7.2.0",
