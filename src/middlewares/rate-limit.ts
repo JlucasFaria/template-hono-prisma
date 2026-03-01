@@ -6,7 +6,7 @@ const requests = new Map<string, { count: number; resetAt: number }>();
 
 // NOTE: This is an in-memory store — not suitable for distributed/multi-instance deployments.
 // For production at scale, replace with a shared store (e.g. Redis).
-setInterval(
+export const rateLimitCleanupInterval = setInterval(
   () => {
     const now = Date.now();
     for (const [ip, record] of requests) {

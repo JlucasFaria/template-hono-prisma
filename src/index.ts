@@ -10,7 +10,7 @@ import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
-import { rateLimitMiddleware } from "./middlewares/rate-limit";
+import { rateLimitMiddleware, rateLimitCleanupInterval } from "./middlewares/rate-limit";
 import prisma from "./db/client";
 
 const app = new OpenAPIHono();
@@ -90,6 +90,7 @@ console.log(`📄 OpenAPI doc:       http://localhost:${port}/doc\n`);
 
 // Graceful shutdown: disconnect Prisma on SIGINT (Ctrl+C) and SIGTERM (Docker/K8s)
 const shutdown = async () => {
+  clearInterval(rateLimitCleanupInterval);
   await prisma.$disconnect();
   process.exit(0);
 };
