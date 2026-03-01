@@ -34,7 +34,10 @@ export const createUserSchema = z
   .openapi("CreateUserInput");
 
 // User creation response schema
-export const createUserResponseSchema = successResponseSchema(UserSchema, "CreateUserResponse");
+export const createUserResponseSchema = successResponseSchema(
+  UserSchema,
+  "CreateUserResponse",
+);
 
 // Paginated user list response schema
 export const paginatedUsersResponseSchema = successResponseSchema(

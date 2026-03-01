@@ -23,7 +23,10 @@ export const loginResponseSchema = z
   .openapi("LoginResponse");
 
 // Login/refresh success response schema
-export const authResponseSchema = successResponseSchema(loginResponseSchema, "AuthResponse");
+export const authResponseSchema = successResponseSchema(
+  loginResponseSchema,
+  "AuthResponse",
+);
 
 export const refreshTokenSchema = z
   .object({
@@ -40,4 +43,7 @@ export const messageSchema = z
   })
   .openapi("MessageResponse");
 
-export const logoutResponseSchema = successResponseSchema(messageSchema, "LogoutResponse");
+export const logoutResponseSchema = successResponseSchema(
+  messageSchema,
+  "LogoutResponse",
+);

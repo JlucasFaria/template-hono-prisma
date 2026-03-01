@@ -6,7 +6,7 @@ import { env } from "../config/env";
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
-  max: 10,                  // maximum number of connections in the pool
+  max: 10, // maximum number of connections in the pool
   idleTimeoutMillis: 30000, // close idle connections after 30s
   connectionTimeoutMillis: 5000, // fail fast if a connection cannot be acquired in 5s
 });

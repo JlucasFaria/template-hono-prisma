@@ -10,7 +10,10 @@ import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
-import { rateLimitMiddleware, rateLimitCleanupInterval } from "./middlewares/rate-limit";
+import {
+  rateLimitMiddleware,
+  rateLimitCleanupInterval,
+} from "./middlewares/rate-limit";
 import prisma from "./db/client";
 
 const app = new OpenAPIHono();
