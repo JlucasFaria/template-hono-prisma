@@ -26,8 +26,11 @@ export const rateLimitMiddleware = (
     // NOTE: X-Forwarded-For can be spoofed by clients. In production, ensure
     // your reverse proxy (nginx, Cloudflare) sets this header and strips
     // any client-provided values before they reach this middleware.
+    // Extract only the first IP from the chain (e.g. "client, proxy1, proxy2" → "client").
+    // In dev without a reverse proxy, x-forwarded-for is absent and all requests fall into
+    // the "unknown" bucket — the entire server shares one rate limit window. This is expected.
     const ip =
-      c.req.header("x-forwarded-for") ||
+      c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
       c.req.header("cf-connecting-ip") ||
       "unknown";
     const now = Date.now();
