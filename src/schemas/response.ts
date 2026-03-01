@@ -1,7 +1,10 @@
 // Shared response schemas for OpenAPI documentation
 import { z } from "@hono/zod-openapi";
 
-export const successResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+export const successResponseSchema = <T extends z.ZodTypeAny>(
+  dataSchema: T,
+  name: string,
+) =>
   z
     .object({
       success: z
@@ -13,7 +16,7 @@ export const successResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
         .optional()
         .openapi({ description: "Optional message" }),
     })
-    .openapi("SuccessResponse");
+    .openapi(name);
 
 export const errorResponseSchema = z
   .object({

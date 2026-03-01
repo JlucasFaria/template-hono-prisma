@@ -34,15 +34,18 @@ export const createUserSchema = z
   .openapi("CreateUserInput");
 
 // User creation response schema
-export const createUserResponseSchema = successResponseSchema(UserSchema);
+export const createUserResponseSchema = successResponseSchema(
+  UserSchema,
+  "CreateUserResponse",
+);
 
 // Paginated user list response schema
-export const paginatedUsersResponseSchema = z
-  .object({
-    success: z.literal(true),
-    data: UserSchema.array(),
+export const paginatedUsersResponseSchema = successResponseSchema(
+  z.object({
+    users: UserSchema.array(),
     pagination: paginationMetaSchema,
-  })
-  .openapi("PaginatedUsersResponse");
+  }),
+  "PaginatedUsersResponse",
+);
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
