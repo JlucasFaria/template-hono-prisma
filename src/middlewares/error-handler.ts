@@ -39,10 +39,12 @@ export const errorHandler: ErrorHandler = (err, c) => {
     typeof err.code === "string" &&
     err.code === "P2002"
   ) {
+    const meta = (err as { meta?: { target?: string[] } }).meta;
+    const field = meta?.target?.[0] ?? "Field";
     return c.json(
       {
         success: false,
-        error: "Email already in use",
+        error: `${field} already in use`,
       },
       409,
     );
