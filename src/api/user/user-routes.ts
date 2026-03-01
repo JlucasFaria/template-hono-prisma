@@ -82,10 +82,7 @@ userRoutes.openapi(listUsersRoute, async (c) => {
   const page = c.req.query("page");
   const limit = c.req.query("limit");
   const result = await userService.getAll(page, limit);
-  return c.json(
-    { success: true, data: result.users, pagination: result.pagination },
-    200,
-  );
+  return successResponse(c, result, 200);
 });
 
 userRoutes.openapi(createUserRoute, async (c) => {

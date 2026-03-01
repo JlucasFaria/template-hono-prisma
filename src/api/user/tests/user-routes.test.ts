@@ -129,19 +129,21 @@ describe("User Routes", () => {
 
       const body = (await res.json()) as {
         success: true;
-        data: Array<{ id: number; email: string; name?: string | null }>;
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
+        data: {
+          users: Array<{ id: number; email: string; name?: string | null }>;
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
         };
       };
 
       expect(res.status).toBe(200);
       expect(body.success).toBe(true);
-      expect(Array.isArray(body.data)).toBe(true);
-      expect(body.pagination).toBeDefined();
+      expect(Array.isArray(body.data.users)).toBe(true);
+      expect(body.data.pagination).toBeDefined();
     });
 
     it("should respect pagination params: return correct page and limit", async () => {
@@ -164,21 +166,23 @@ describe("User Routes", () => {
 
       const body = (await res.json()) as {
         success: true;
-        data: Array<{ id: number; email: string }>;
-        pagination: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
+        data: {
+          users: Array<{ id: number; email: string }>;
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
         };
       };
 
       expect(res.status).toBe(200);
-      expect(body.data.length).toBe(2);
-      expect(body.pagination.page).toBe(1);
-      expect(body.pagination.limit).toBe(2);
-      expect(body.pagination.total).toBe(3);
-      expect(body.pagination.totalPages).toBe(2);
+      expect(body.data.users.length).toBe(2);
+      expect(body.data.pagination.page).toBe(1);
+      expect(body.data.pagination.limit).toBe(2);
+      expect(body.data.pagination.total).toBe(3);
+      expect(body.data.pagination.totalPages).toBe(2);
     });
   });
 });
