@@ -14,6 +14,7 @@
     "db:stop": "docker compose stop",
     "db:down": "docker compose down",
     "db:migrate": "bunx prisma migrate dev",
+    "db:migrate:prod": "bunx prisma migrate deploy",
     "db:generate": "bunx prisma generate",
     "db:studio": "bunx prisma studio",
     "db:reset": "docker compose down -v && docker compose up -d && bunx prisma migrate dev && bun run db:seed",
