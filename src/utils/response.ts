@@ -47,10 +47,10 @@ export function successResponse<T, S extends StatusCode = 200>(
 /**
  * Returns a standardized error response
  */
-export function errorResponse(
+export function errorResponse<S extends StatusCode>(
   c: Context,
   error: string,
-  status: StatusCode = 400,
+  status: S,
   details?: unknown,
 ) {
   return c.json(
