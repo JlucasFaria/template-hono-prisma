@@ -2,6 +2,148 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git Workflow
+
+### Branch and commit rules
+
+- Always check which branch you are on before starting any task
+- Each group of tasks must have its own branch created from an updated `main`
+- Branch name format: `feature/group-name`
+- Each individual task = 1 commit on that branch
+- Commit format: `<type>: short description` — where `<type>` follows Conventional Commits (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`)
+
+### Mandatory work order
+
+1. Ensure local `main` is up to date (`git pull origin main`)
+2. Create the group branch from `main`
+3. After each completed task:
+   - Run the tests and verify they all pass
+   - Only commit if tests are OK
+   - If any test fails, fix it before committing
+   - Mark the task as `[x]` in `Tasks.md`
+4. After completing all tasks in a group:
+   - Run the tests again
+   - Run linting and fix all errors/warnings
+   - **STOP and generate the Change Report (see section below)**
+   - Wait for explicit user approval before any push
+5. After approval: push and open the PR on GitHub
+6. Only create the next branch after the previous PR is merged and after running `git pull origin main`
+
+### Never do
+
+- Do not commit without first running and verifying tests
+- Do not push without explicit user approval
+- Do not create multiple branches simultaneously before merging previous ones
+- Do not commit directly to `main`
+- Do not start a new task group without running `git pull origin main` first
+
+---
+
+## Tasks.md Workflow
+
+### When to create Tasks.md
+
+Create or update `Tasks.md` **before starting any implementation** when:
+
+- The user describes a set of changes to make
+- There is more than 1 thing to implement/fix
+- The task involves functional code (features, bugfixes, refactors)
+
+### How to create Tasks.md
+
+When the user describes what they want, **before coding**:
+
+1. Analyze the request and decompose it into atomic tasks
+2. Write `Tasks.md` with the format below
+3. **Show Tasks.md to the user and wait for confirmation** before starting
+
+### Tasks.md format
+
+```markdown
+# Tasks — [group/feature name]
+
+## Branch: `feature/group-name`
+
+## Tasks
+
+- [ ] Task 1: clear and objective description
+- [ ] Task 2: clear and objective description
+- [ ] Task 3: clear and objective description
+
+## Context
+
+[Summary of the overall goal in 2-3 lines]
+
+## Expected files to modify
+
+- `src/...`
+- `tests/...`
+```
+
+### How to keep Tasks.md updated
+
+- Mark `[x]` after each completed task (after tests pass)
+- If a new task arises during work, add it to the file before executing
+- When **all** tasks in a group are done AND the PR is merged:
+  - Delete that entire group block from `Tasks.md`
+  - The file should contain only groups with pending tasks
+- If `Tasks.md` becomes empty after cleanup, delete the file
+
+---
+
+## Change Report (pre-push)
+
+Before any `git push`, mandatorily generate this report and **wait for approval**:
+
+```
+## Change Report — [branch name]
+
+### Completed tasks
+- [x] Task 1 — commit: `feat: description`
+- [x] Task 2 — commit: `fix: description`
+
+### Modified files
+| File | Change type |
+|------|-------------|
+| src/foo.ts | Modified |
+| src/bar.ts | Created |
+| tests/foo.test.ts | Modified |
+
+### Summary of changes
+[2-4 lines describing what was done and why]
+
+### Tests
+- Total: X | Passing: X | Failing: 0
+
+### Linting
+- Status: no errors/warnings
+
+### Next step
+Awaiting your approval to run:
+`git push origin feature/group-name` and open the PR.
+
+Type "approve" to proceed or indicate adjustments.
+```
+
+---
+
+## When to apply this workflow
+
+Full workflow (Tasks.md + Report + approval):
+
+- Multiple tasks to implement
+- Task involves functional code (features, bugfixes, refactors)
+
+Simplified workflow (no ceremony):
+
+- Trivial fix like typo, text adjustment, comment
+- User asks for something quick and pointed
+- An active branch already exists for that context
+
+When in doubt, ask before creating a branch or Tasks.md.
+
+---
+
 ## Project Overview
 
 A REST API template built with **Hono** (web framework), **Prisma 7** ORM (with `@prisma/adapter-pg`), **Zod 4** validation, and **Bun** runtime. Features OpenAPI/Swagger documentation, JWT authentication with refresh tokens, and PostgreSQL database via Docker.
