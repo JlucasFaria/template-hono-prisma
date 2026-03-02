@@ -80,6 +80,53 @@ describe("User Routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("should return 400 when email is invalid", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "not-an-email",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when name has less than 2 characters", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          name: "A",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when body is empty", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({}),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when email field is missing", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({ password: "secret1234" }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it("should return 409 when email is already in use", async () => {
       // First registration — should succeed
       await app.request("/api/users", {
