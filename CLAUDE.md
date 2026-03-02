@@ -108,12 +108,14 @@ src/
 **Auth Routes Factory**: `auth-routes.ts` exports `createAuthRoutes(userRepo: IUserAuthRepository)` instead of a default route instance. The `IUserAuthRepository` interface (defined in `auth-routes.ts`) exposes only `findByEmail` and `verifyPassword` — the two methods auth actually needs. `UserService` satisfies this interface via TypeScript's structural typing. Wiring happens at the composition root (`index.ts`): `app.route("/api/auth", createAuthRoutes(new UserService()))`. This keeps `auth` decoupled from the `user` implementation and testable in isolation.
 
 **Domain Module Structure**: Each domain (`auth`, `user`) follows the pattern:
+
 - `{domain}-schema.ts` — Zod schemas with OpenAPI metadata
 - `{domain}-service.ts` — Business logic class with Prisma DI
 - `{domain}-routes.ts` — OpenAPI route definitions and handlers
 - `tests/` — Co-located test files
 
 **OpenAPI Routes**: Uses `@hono/zod-openapi` with `createRoute()`:
+
 ```typescript
 const route = createRoute({
   method: "get",
@@ -125,6 +127,7 @@ app.openapi(route, handler);
 ```
 
 **Standardized Responses**: All endpoints return consistent JSON via helpers in `src/utils/response.ts`:
+
 ```typescript
 return successResponse(c, data, 201, "Created successfully");
 // → { success: true, data: {...}, message: "Created successfully" }
@@ -136,6 +139,7 @@ return errorResponse(c, "Not found", 404);
 **JWT Authentication**: Protect routes with `authMiddleware` from `src/middlewares/auth.ts`. JWT payload type: `{ id: number, email: string, exp: number }` via `AuthVariables`. Extract payload with `getAuthPayload(c)`.
 
 **Auth Flow**:
+
 - `POST /api/auth/login` → returns access token (1h) + refresh token (7d)
 - `POST /api/auth/refresh` → validates refresh token, rotates it (old revoked, new issued), returns new token pair
 - `POST /api/auth/logout` → revokes refresh token (idempotent — succeeds even if token not found). Note: the JWT access token remains valid until its natural expiry (~1h); only the refresh token is revoked. For immediate invalidation, implement a token blacklist (e.g., Redis).
@@ -146,6 +150,7 @@ return errorResponse(c, "Not found", 404);
 **Pagination**: Use `getPaginationParams(page, limit)` and `createPaginationMeta(page, limit, total)` from `src/utils/pagination.ts`. Default: page 1, limit 10, max 100. Non-numeric values fall back to defaults safely.
 
 **Error Handling**: Global handler in `src/middlewares/error-handler.ts`:
+
 - `ZodError` → 400 with field-level details
 - `HTTPException` → corresponding status code
 - Prisma `P2002` → 409 conflict with dynamic message: `` `${field} already in use` `` (field extracted from `err.meta.target`)
@@ -156,16 +161,16 @@ return errorResponse(c, "Not found", 404);
 
 Required in `.env` (see `.env.example`):
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string (validated as URL) |
-| `JWT_SECRET` | Signing key, minimum 32 characters |
-| `PORT` | Server port (default: 3000) |
-| `NODE_ENV` | `development` \| `test` \| `production` |
-| `CORS_ORIGIN` | Allowed CORS origin(s) — `"*"` or comma-separated URLs |
-| `DATABASE_DB` | Database name (used by Docker Compose) |
-| `DATABASE_USER` | Database user (used by Docker Compose) |
-| `DATABASE_PASSWORD` | Database password (used by Docker Compose) |
+| Variable            | Description                                            |
+| ------------------- | ------------------------------------------------------ |
+| `DATABASE_URL`      | PostgreSQL connection string (validated as URL)        |
+| `JWT_SECRET`        | Signing key, minimum 32 characters                     |
+| `PORT`              | Server port (default: 3000)                            |
+| `NODE_ENV`          | `development` \| `test` \| `production`                |
+| `CORS_ORIGIN`       | Allowed CORS origin(s) — `"*"` or comma-separated URLs |
+| `DATABASE_DB`       | Database name (used by Docker Compose)                 |
+| `DATABASE_USER`     | Database user (used by Docker Compose)                 |
+| `DATABASE_PASSWORD` | Database password (used by Docker Compose)             |
 
 Validation happens at startup via Zod in `src/config/env.ts`. The app crashes immediately if env vars are invalid.
 
@@ -173,11 +178,11 @@ Validation happens at startup via Zod in `src/config/env.ts`. The app crashes im
 
 Run `bun run db:seed` to populate the database with 3 default users:
 
-| Email | Password |
-|---|---|
+| Email              | Password  |
+| ------------------ | --------- |
 | admin@template.com | admin1234 |
 | alice@template.com | alice1234 |
-| bob@template.com | bob12345 |
+| bob@template.com   | bob12345  |
 
 The seed is idempotent (`upsert`) and can be run multiple times safely.
 
@@ -193,12 +198,12 @@ The seed is idempotent (`upsert`) and can be run multiple times safely.
 
 Test files:
 
-| File | Type | Coverage |
-|---|---|---|
-| `src/api/health/tests/health.test.ts` | Integration | `GET /health` — status, timestamp, DB connectivity |
-| `src/api/auth/tests/auth-routes.test.ts` | Integration | Login, refresh token rotation, logout, token reuse prevention |
-| `src/api/user/tests/user-routes.test.ts` | Integration | User creation, duplicate detection, auth requirement, pagination |
-| `src/api/user/tests/user-service.test.ts` | Unit | `create`, `getAll`, `findByEmail`, `verifyPassword` |
+| File                                      | Type        | Coverage                                                         |
+| ----------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| `src/api/health/tests/health.test.ts`     | Integration | `GET /health` — status, timestamp, DB connectivity               |
+| `src/api/auth/tests/auth-routes.test.ts`  | Integration | Login, refresh token rotation, logout, token reuse prevention    |
+| `src/api/user/tests/user-routes.test.ts`  | Integration | User creation, duplicate detection, auth requirement, pagination |
+| `src/api/user/tests/user-service.test.ts` | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`              |
 
 ## CI/CD
 
@@ -222,6 +227,7 @@ Triggers on push/PR to `main` and `master`. Spins up a PostgreSQL service contai
 The project currently uses Hono's built-in `logger()` middleware and `console.error` for error logging. This is sufficient for development but not for production.
 
 For production, replace with a structured logging library (e.g., `pino` or `winston`) that outputs JSON logs with fields like:
+
 - `requestId` — from the `X-Request-ID` header (already generated by `request-id.ts`)
 - `userId` — from the JWT payload when available
 - `duration` — request duration in ms
