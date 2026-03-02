@@ -193,6 +193,72 @@ describe("User Routes", () => {
       expect(body.data.pagination).toBeDefined();
     });
 
+    it("should use page 1 when page=0 is provided", async () => {
+      const res = await app.request("/api/users?page=0", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use page 1 when page=-5 is provided", async () => {
+      const res = await app.request("/api/users?page=-5", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use limit 1 when limit=0 is provided", async () => {
+      const res = await app.request("/api/users?limit=0", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(1);
+    });
+
+    it("should cap limit at 100 when limit=101 is provided", async () => {
+      const res = await app.request("/api/users?limit=101", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(100);
+    });
+
+    it("should use page 1 when page=abc is provided", async () => {
+      const res = await app.request("/api/users?page=abc", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use default limit of 10 when limit is an empty string", async () => {
+      const res = await app.request("/api/users?limit=", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(10);
+    });
+
     it("should respect pagination params: return correct page and limit", async () => {
       // Create 3 users so we have data to paginate
       for (let i = 1; i <= 3; i++) {
