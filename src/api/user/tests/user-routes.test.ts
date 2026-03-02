@@ -80,6 +80,53 @@ describe("User Routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("should return 400 when email is invalid", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "not-an-email",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when name has less than 2 characters", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          name: "A",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when body is empty", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({}),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when email field is missing", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({ password: "secret1234" }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it("should return 409 when email is already in use", async () => {
       // First registration — should succeed
       await app.request("/api/users", {
@@ -144,6 +191,72 @@ describe("User Routes", () => {
       expect(body.success).toBe(true);
       expect(Array.isArray(body.data.users)).toBe(true);
       expect(body.data.pagination).toBeDefined();
+    });
+
+    it("should use page 1 when page=0 is provided", async () => {
+      const res = await app.request("/api/users?page=0", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use page 1 when page=-5 is provided", async () => {
+      const res = await app.request("/api/users?page=-5", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use limit 1 when limit=0 is provided", async () => {
+      const res = await app.request("/api/users?limit=0", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(1);
+    });
+
+    it("should cap limit at 100 when limit=101 is provided", async () => {
+      const res = await app.request("/api/users?limit=101", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(100);
+    });
+
+    it("should use page 1 when page=abc is provided", async () => {
+      const res = await app.request("/api/users?page=abc", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { page: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.page).toBe(1);
+    });
+
+    it("should use default limit of 10 when limit is an empty string", async () => {
+      const res = await app.request("/api/users?limit=", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as {
+        data: { pagination: { limit: number } };
+      };
+      expect(res.status).toBe(200);
+      expect(body.data.pagination.limit).toBe(10);
     });
 
     it("should respect pagination params: return correct page and limit", async () => {
