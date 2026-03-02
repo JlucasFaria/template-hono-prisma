@@ -2,7 +2,6 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
-import { UserService } from "../user/user-service";
 import { AuthService } from "./auth-service";
 import {
   loginSchema,
@@ -16,21 +15,18 @@ import {
 } from "../../schemas/response";
 import { successResponse, errorResponse } from "../../utils/response";
 
-const authRoutes = new OpenAPIHono();
-const userService = new UserService();
-const authService = new AuthService();
-
-async function generateAccessToken(user: { id: number; email: string }) {
-  const payload = {
-    id: user.id,
-    email: user.email,
-    exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour from now
-  };
-
-  return await sign(payload, env.JWT_SECRET);
+// Minimal interface — auth only needs these two methods from the user domain.
+// Using an interface instead of importing UserService directly keeps this module
+// decoupled from the user implementation and easier to test in isolation.
+export interface IUserAuthRepository {
+  findByEmail(
+    email: string,
+  ): Promise<{ id: number; email: string; password: string } | null>;
+  verifyPassword(hash: string, password: string): Promise<boolean>;
 }
 
-// === POST /login ===
+// === Route Definitions ===
+
 const loginRoute = createRoute({
   method: "post",
   path: "/login",
@@ -58,7 +54,6 @@ const loginRoute = createRoute({
   },
 });
 
-// === POST /refresh ===
 const refreshRoute = createRoute({
   method: "post",
   path: "/refresh",
@@ -86,7 +81,6 @@ const refreshRoute = createRoute({
   },
 });
 
-// === POST /logout ===
 const logoutRoute = createRoute({
   method: "post",
   path: "/logout",
@@ -110,65 +104,83 @@ const logoutRoute = createRoute({
   },
 });
 
-// === Login Handler ===
-authRoutes.openapi(loginRoute, async (c) => {
-  const { email, password } = c.req.valid("json");
+// === Factory function ===
+// Receives a userRepo that satisfies IUserAuthRepository.
+// Wiring with the concrete UserService happens at the composition root (index.ts).
+export function createAuthRoutes(userRepo: IUserAuthRepository) {
+  const authRoutes = new OpenAPIHono();
+  const authService = new AuthService();
 
-  const user = await userService.findByEmail(email);
-
-  if (!user) {
-    return errorResponse(c, "Invalid credentials", 401);
+  async function generateAccessToken(user: { id: number; email: string }) {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour from now
+    };
+    return await sign(payload, env.JWT_SECRET);
   }
 
-  const isValid = await userService.verifyPassword(user.password, password);
+  // === Login Handler ===
+  authRoutes.openapi(loginRoute, async (c) => {
+    const { email, password } = c.req.valid("json");
 
-  if (!isValid) {
-    return errorResponse(c, "Invalid credentials", 401);
-  }
+    const user = await userRepo.findByEmail(email);
 
-  const accessToken = await generateAccessToken(user);
-  const refreshToken = await authService.generateRefreshToken(user.id);
+    if (!user) {
+      return errorResponse(c, "Invalid credentials", 401);
+    }
 
-  return successResponse(c, { token: accessToken, refreshToken }, 200);
-});
+    const isValid = await userRepo.verifyPassword(user.password, password);
 
-authRoutes.openapi(refreshRoute, async (c) => {
-  const { refreshToken } = c.req.valid("json");
+    if (!isValid) {
+      return errorResponse(c, "Invalid credentials", 401);
+    }
 
-  const storedToken = await authService.validateRefreshToken(refreshToken);
+    const accessToken = await generateAccessToken(user);
+    const refreshToken = await authService.generateRefreshToken(user.id);
 
-  if (!storedToken) {
-    return errorResponse(c, "Invalid or expired refresh token", 401);
-  }
+    return successResponse(c, { token: accessToken, refreshToken }, 200);
+  });
 
-  await authService.revokeRefreshToken(refreshToken);
+  // === Refresh Handler ===
+  authRoutes.openapi(refreshRoute, async (c) => {
+    const { refreshToken } = c.req.valid("json");
 
-  const accessToken = await generateAccessToken(storedToken.user);
-  const newRefreshToken = await authService.generateRefreshToken(
-    storedToken.userId,
-  );
+    const storedToken = await authService.validateRefreshToken(refreshToken);
 
-  return successResponse(
-    c,
-    { token: accessToken, refreshToken: newRefreshToken },
-    200,
-  );
-});
+    if (!storedToken) {
+      return errorResponse(c, "Invalid or expired refresh token", 401);
+    }
 
-// === Logout Handler ===
-// NOTE: Stateless JWT limitation — revoking the refresh token prevents new access tokens
-// from being issued, but the current access token remains valid until it expires (~1h).
-// For immediate revocation, a token blacklist (e.g. Redis) would be required.
-authRoutes.openapi(logoutRoute, async (c) => {
-  const { refreshToken } = c.req.valid("json");
-
-  try {
     await authService.revokeRefreshToken(refreshToken);
-  } catch {
-    // Token doesn't exist — that's fine, treat as already logged out
-  }
 
-  return successResponse(c, { message: "Logged out successfully" }, 200);
-});
+    const accessToken = await generateAccessToken(storedToken.user);
+    const newRefreshToken = await authService.generateRefreshToken(
+      storedToken.userId,
+    );
 
-export default authRoutes;
+    return successResponse(
+      c,
+      { token: accessToken, refreshToken: newRefreshToken },
+      200,
+    );
+  });
+
+  // === Logout Handler ===
+  // NOTE: Stateless JWT limitation — revoking the refresh token prevents new access tokens
+  // from being issued, but the current access token remains valid until it expires (~1h).
+  // For immediate revocation, a token blacklist (e.g. Redis) would be required.
+  authRoutes.openapi(logoutRoute, async (c) => {
+    const { refreshToken } = c.req.valid("json");
+
+    try {
+      await authService.revokeRefreshToken(refreshToken);
+    } catch {
+      // Token doesn't exist — that's fine, treat as already logged out
+    }
+
+    return successResponse(c, { message: "Logged out successfully" }, 200);
+  });
+
+  return authRoutes;
+}

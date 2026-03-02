@@ -7,8 +7,9 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
 import userRoutes from "./api/user/user-routes";
-import authRoutes from "./api/auth/auth-routes";
+import { createAuthRoutes } from "./api/auth/auth-routes";
 import healthRoutes from "./api/health/health-routes";
+import { UserService } from "./api/user/user-service";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
 import {
@@ -63,7 +64,7 @@ app.onError(errorHandler);
 
 app.route("/health", healthRoutes);
 app.route("/api/users", userRoutes);
-app.route("/api/auth", authRoutes);
+app.route("/api/auth", createAuthRoutes(new UserService()));
 
 const port = env.PORT;
 console.log(`\n🚀 Server running at: http://localhost:${port}`);
