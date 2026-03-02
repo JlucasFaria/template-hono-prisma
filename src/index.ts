@@ -8,6 +8,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
 import userRoutes from "./api/user/user-routes";
 import authRoutes from "./api/auth/auth-routes";
+import healthRoutes from "./api/health/health-routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
 import {
@@ -55,34 +56,12 @@ app.doc("/doc", {
 
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
-app.get("/health", async (c) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return c.json(
-      {
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        database: "connected",
-      },
-      200,
-    );
-  } catch {
-    return c.json(
-      {
-        status: "error",
-        timestamp: new Date().toISOString(),
-        database: "disconnected",
-      },
-      503,
-    );
-  }
-});
-
 app.get("/", (c) => c.text("Server is running!"));
 
 // Global error handler
 app.onError(errorHandler);
 
+app.route("/health", healthRoutes);
 app.route("/api/users", userRoutes);
 app.route("/api/auth", authRoutes);
 
