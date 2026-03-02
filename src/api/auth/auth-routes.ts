@@ -25,85 +25,6 @@ export interface IUserAuthRepository {
   verifyPassword(hash: string, password: string): Promise<boolean>;
 }
 
-// === Route Definitions ===
-
-const loginRoute = createRoute({
-  method: "post",
-  path: "/login",
-  tags: ["Auth"],
-  request: {
-    body: {
-      content: { "application/json": { schema: loginSchema } },
-    },
-  },
-  responses: {
-    200: {
-      content: { "application/json": { schema: authResponseSchema } },
-      description: "Login successful, returns access and refresh tokens",
-    },
-    400: {
-      content: {
-        "application/json": { schema: validationErrorResponseSchema },
-      },
-      description: "Validation error",
-    },
-    401: {
-      content: { "application/json": { schema: errorResponseSchema } },
-      description: "Invalid credentials",
-    },
-  },
-});
-
-const refreshRoute = createRoute({
-  method: "post",
-  path: "/refresh",
-  tags: ["Auth"],
-  request: {
-    body: {
-      content: { "application/json": { schema: refreshTokenSchema } },
-    },
-  },
-  responses: {
-    200: {
-      content: { "application/json": { schema: authResponseSchema } },
-      description: "Tokens refreshed successfully",
-    },
-    400: {
-      content: {
-        "application/json": { schema: validationErrorResponseSchema },
-      },
-      description: "Validation error",
-    },
-    401: {
-      content: { "application/json": { schema: errorResponseSchema } },
-      description: "Invalid or expired refresh token",
-    },
-  },
-});
-
-const logoutRoute = createRoute({
-  method: "post",
-  path: "/logout",
-  tags: ["Auth"],
-  request: {
-    body: {
-      content: { "application/json": { schema: refreshTokenSchema } },
-    },
-  },
-  responses: {
-    200: {
-      content: { "application/json": { schema: logoutResponseSchema } },
-      description: "Logout successful, refresh token revoked",
-    },
-    400: {
-      content: {
-        "application/json": { schema: validationErrorResponseSchema },
-      },
-      description: "Validation error",
-    },
-  },
-});
-
 // === Factory function ===
 // Receives a userRepo that satisfies IUserAuthRepository.
 // Wiring with the concrete UserService happens at the composition root (index.ts).
@@ -119,6 +40,85 @@ export function createAuthRoutes(userRepo: IUserAuthRepository) {
     };
     return await sign(payload, env.JWT_SECRET);
   }
+
+  // === Route Definitions ===
+
+  const loginRoute = createRoute({
+    method: "post",
+    path: "/login",
+    tags: ["Auth"],
+    request: {
+      body: {
+        content: { "application/json": { schema: loginSchema } },
+      },
+    },
+    responses: {
+      200: {
+        content: { "application/json": { schema: authResponseSchema } },
+        description: "Login successful, returns access and refresh tokens",
+      },
+      400: {
+        content: {
+          "application/json": { schema: validationErrorResponseSchema },
+        },
+        description: "Validation error",
+      },
+      401: {
+        content: { "application/json": { schema: errorResponseSchema } },
+        description: "Invalid credentials",
+      },
+    },
+  });
+
+  const refreshRoute = createRoute({
+    method: "post",
+    path: "/refresh",
+    tags: ["Auth"],
+    request: {
+      body: {
+        content: { "application/json": { schema: refreshTokenSchema } },
+      },
+    },
+    responses: {
+      200: {
+        content: { "application/json": { schema: authResponseSchema } },
+        description: "Tokens refreshed successfully",
+      },
+      400: {
+        content: {
+          "application/json": { schema: validationErrorResponseSchema },
+        },
+        description: "Validation error",
+      },
+      401: {
+        content: { "application/json": { schema: errorResponseSchema } },
+        description: "Invalid or expired refresh token",
+      },
+    },
+  });
+
+  const logoutRoute = createRoute({
+    method: "post",
+    path: "/logout",
+    tags: ["Auth"],
+    request: {
+      body: {
+        content: { "application/json": { schema: refreshTokenSchema } },
+      },
+    },
+    responses: {
+      200: {
+        content: { "application/json": { schema: logoutResponseSchema } },
+        description: "Logout successful, refresh token revoked",
+      },
+      400: {
+        content: {
+          "application/json": { schema: validationErrorResponseSchema },
+        },
+        description: "Validation error",
+      },
+    },
+  });
 
   // === Login Handler ===
   authRoutes.openapi(loginRoute, async (c) => {
