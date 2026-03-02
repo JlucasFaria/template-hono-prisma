@@ -39,6 +39,7 @@ describe("UserService", () => {
       const result = await userService.getAll();
 
       expect(result.users.length).toBe(2);
+      expect(result.users[0]).not.toHaveProperty("password");
     });
     it("should return users ordered by id ascending", async () => {
       const first = await userService.create({
