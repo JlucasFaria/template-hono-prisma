@@ -48,7 +48,10 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use("/api/*", rateLimitMiddleware(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS));
+app.use(
+  "/api/*",
+  rateLimitMiddleware(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS),
+);
 app.use("/api/*", bodyLimit({ maxSize: BODY_LIMIT_BYTES }));
 
 // OpenAPI documentation
