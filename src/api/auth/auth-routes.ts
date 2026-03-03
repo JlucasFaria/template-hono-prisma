@@ -27,11 +27,13 @@ export interface IUserAuthRepository {
 }
 
 // === Factory function ===
-// Receives a userRepo that satisfies IUserAuthRepository.
-// Wiring with the concrete UserService happens at the composition root (index.ts).
-export function createAuthRoutes(userRepo: IUserAuthRepository) {
+// Receives a userRepo and an optional authService (defaults to a new AuthService).
+// Wiring with concrete implementations happens at the composition root (index.ts).
+export function createAuthRoutes(
+  userRepo: IUserAuthRepository,
+  authService: AuthService = new AuthService(),
+) {
   const authRoutes = new OpenAPIHono();
-  const authService = new AuthService();
 
   async function generateAccessToken(user: { id: number; email: string }) {
     const payload = {
