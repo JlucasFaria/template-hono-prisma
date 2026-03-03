@@ -28,6 +28,11 @@ export class AuthService {
       return null;
     }
 
+    await this.prisma.refreshToken.update({
+      where: { token },
+      data: { lastUsedAt: new Date() },
+    });
+
     return refreshToken;
   }
 
