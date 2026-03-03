@@ -25,15 +25,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Run the tests again
    - Run linting and fix all errors/warnings
    - **STOP and generate the Change Report (see section below)**
-   - Wait for explicit user approval before any push
-5. After approval: push and open the PR on GitHub
+   - Wait for explicit user approval
+5. After approval: the **user** handles `git push` and opening the PR on GitHub
 6. After the PR is merged: run `git pull origin main`, then immediately delete the merged branch locally with `git branch -d feature/branch-name`
 7. Only then create the next group's branch
 
 ### Never do
 
 - Do not commit without first running and verifying tests
-- Do not push without explicit user approval
+- Do not push — the user handles all `git push` commands
 - Do not create multiple branches simultaneously before merging previous ones
 - Do not commit directly to `main`
 - Do not start a new task group without running `git pull origin main` first
@@ -127,7 +127,7 @@ Before any `git push`, mandatorily generate this report and **wait for approval*
 - Status: no errors/warnings
 
 ### Next step
-Awaiting your approval to run:
+Awaiting your approval. Once approved, you can run:
 `git push origin feature/group-name` and open the PR.
 
 Type "approve" to proceed or indicate adjustments.
