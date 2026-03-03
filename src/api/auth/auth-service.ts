@@ -1,12 +1,13 @@
 import crypto from "crypto";
 import prismaClient from "../../db/client";
 import type { PrismaClient } from "../../../generated/prisma";
+import { REFRESH_TOKEN_TTL_MS } from "../../config/constants";
 
 export class AuthService {
   constructor(private prisma: PrismaClient = prismaClient) {}
   async generateRefreshToken(userId: number) {
     const token = crypto.randomBytes(40).toString("hex");
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
     await this.prisma.refreshToken.create({
       data: { token, userId, expiresAt },

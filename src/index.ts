@@ -6,9 +6,9 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
-import userRoutes from "./api/user/user-routes";
+import { createUserRoutes } from "./api/user/user-routes";
 import { createAuthRoutes } from "./api/auth/auth-routes";
-import healthRoutes from "./api/health/health-routes";
+import { createHealthRoutes } from "./api/health/health-routes";
 import { UserService } from "./api/user/user-service";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
@@ -17,6 +17,11 @@ import {
   rateLimitCleanupInterval,
 } from "./middlewares/rate-limit";
 import prisma from "./db/client";
+import {
+  RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_WINDOW_MS,
+  BODY_LIMIT_BYTES,
+} from "./config/constants";
 
 const app = new OpenAPIHono();
 
@@ -43,8 +48,11 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit only on API routes
-app.use("/api/*", bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1MB
+app.use(
+  "/api/*",
+  rateLimitMiddleware(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS),
+);
+app.use("/api/*", bodyLimit({ maxSize: BODY_LIMIT_BYTES }));
 
 // OpenAPI documentation
 app.doc("/doc", {
@@ -62,8 +70,8 @@ app.get("/", (c) => c.text("Server is running!"));
 // Global error handler
 app.onError(errorHandler);
 
-app.route("/health", healthRoutes);
-app.route("/api/users", userRoutes);
+app.route("/health", createHealthRoutes());
+app.route("/api/users", createUserRoutes());
 app.route("/api/auth", createAuthRoutes(new UserService()));
 
 const port = env.PORT;

@@ -2,6 +2,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
+import { ACCESS_TOKEN_TTL_SECONDS } from "../../config/constants";
 import { AuthService } from "./auth-service";
 import {
   loginSchema,
@@ -26,17 +27,19 @@ export interface IUserAuthRepository {
 }
 
 // === Factory function ===
-// Receives a userRepo that satisfies IUserAuthRepository.
-// Wiring with the concrete UserService happens at the composition root (index.ts).
-export function createAuthRoutes(userRepo: IUserAuthRepository) {
+// Receives a userRepo and an optional authService (defaults to a new AuthService).
+// Wiring with concrete implementations happens at the composition root (index.ts).
+export function createAuthRoutes(
+  userRepo: IUserAuthRepository,
+  authService: AuthService = new AuthService(),
+) {
   const authRoutes = new OpenAPIHono();
-  const authService = new AuthService();
 
   async function generateAccessToken(user: { id: number; email: string }) {
     const payload = {
       id: user.id,
       email: user.email,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour from now
+      exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
     };
     return await sign(payload, env.JWT_SECRET);
   }
@@ -139,7 +142,12 @@ export function createAuthRoutes(userRepo: IUserAuthRepository) {
     const accessToken = await generateAccessToken(user);
     const refreshToken = await authService.generateRefreshToken(user.id);
 
-    return successResponse(c, { token: accessToken, refreshToken }, 200);
+    return successResponse(
+      c,
+      { token: accessToken, refreshToken },
+      200,
+      "Login successful",
+    );
   });
 
   // === Refresh Handler ===
@@ -163,6 +171,7 @@ export function createAuthRoutes(userRepo: IUserAuthRepository) {
       c,
       { token: accessToken, refreshToken: newRefreshToken },
       200,
+      "Tokens refreshed successfully",
     );
   });
 

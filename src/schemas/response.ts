@@ -29,6 +29,9 @@ export const validationErrorResponseSchema = z
   .object({
     success: z.literal(false),
     error: z.string(),
-    details: z.unknown().optional(),
+    details: z
+      .array(z.object({ path: z.string(), message: z.string() }))
+      .optional()
+      .openapi({ description: "Field-level validation errors" }),
   })
   .openapi("ValidationErrorResponse");
