@@ -2,6 +2,7 @@
 import { HTTPException } from "hono/http-exception";
 import type { ErrorHandler } from "hono";
 import { ZodError } from "zod";
+import { PrismaClientKnownRequestError } from "../../generated/prisma/runtime/client";
 import { env } from "../config/env";
 
 export const errorHandler: ErrorHandler = (err, c) => {
@@ -31,34 +32,17 @@ export const errorHandler: ErrorHandler = (err, c) => {
     );
   }
 
-  // Prisma P2002 — unique constraint violation (duplicate record)
-  if (
-    err &&
-    typeof err === "object" &&
-    "code" in err &&
-    typeof err.code === "string" &&
-    err.code === "P2002"
-  ) {
-    const meta = (err as { meta?: { target?: string[] } }).meta;
-    const field = meta?.target?.[0] ?? "Field";
-    return c.json(
-      {
-        success: false,
-        error: `${field} already in use`,
-      },
-      409,
-    );
-  }
+  // Prisma known request errors (P2002, P2025, etc.)
+  if (err instanceof PrismaClientKnownRequestError) {
+    if (err.code === "P2002") {
+      const meta = err.meta as { target?: string[] } | undefined;
+      const field = meta?.target?.[0] ?? "Field";
+      return c.json({ success: false, error: `${field} already in use` }, 409);
+    }
 
-  // Prisma P2025 — record not found (update/delete on non-existent record)
-  if (
-    err &&
-    typeof err === "object" &&
-    "code" in err &&
-    typeof err.code === "string" &&
-    err.code === "P2025"
-  ) {
-    return c.json({ success: false, error: "Record not found" }, 404);
+    if (err.code === "P2025") {
+      return c.json({ success: false, error: "Record not found" }, 404);
+    }
   }
 
   // Unexpected server errors
