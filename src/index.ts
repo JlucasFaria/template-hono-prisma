@@ -6,9 +6,9 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
-import userRoutes from "./api/user/user-routes";
+import { createUserRoutes } from "./api/user/user-routes";
 import { createAuthRoutes } from "./api/auth/auth-routes";
-import healthRoutes from "./api/health/health-routes";
+import { createHealthRoutes } from "./api/health/health-routes";
 import { UserService } from "./api/user/user-service";
 import { errorHandler } from "./middlewares/error-handler";
 import { requestIdMiddleware } from "./middlewares/request-id";
@@ -67,8 +67,8 @@ app.get("/", (c) => c.text("Server is running!"));
 // Global error handler
 app.onError(errorHandler);
 
-app.route("/health", healthRoutes);
-app.route("/api/users", userRoutes);
+app.route("/health", createHealthRoutes());
+app.route("/api/users", createUserRoutes());
 app.route("/api/auth", createAuthRoutes(new UserService()));
 
 const port = env.PORT;
