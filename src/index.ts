@@ -17,6 +17,11 @@ import {
   rateLimitCleanupInterval,
 } from "./middlewares/rate-limit";
 import prisma from "./db/client";
+import {
+  RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_WINDOW_MS,
+  BODY_LIMIT_BYTES,
+} from "./config/constants";
 
 const app = new OpenAPIHono();
 
@@ -43,8 +48,8 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use("/api/*", rateLimitMiddleware(100, 60000)); // Rate limit only on API routes
-app.use("/api/*", bodyLimit({ maxSize: 1 * 1024 * 1024 })); // 1MB
+app.use("/api/*", rateLimitMiddleware(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS));
+app.use("/api/*", bodyLimit({ maxSize: BODY_LIMIT_BYTES }));
 
 // OpenAPI documentation
 app.doc("/doc", {

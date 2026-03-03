@@ -2,6 +2,7 @@
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
 import { env } from "../../config/env";
+import { ACCESS_TOKEN_TTL_SECONDS } from "../../config/constants";
 import { AuthService } from "./auth-service";
 import {
   loginSchema,
@@ -36,7 +37,7 @@ export function createAuthRoutes(userRepo: IUserAuthRepository) {
     const payload = {
       id: user.id,
       email: user.email,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour from now
+      exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
     };
     return await sign(payload, env.JWT_SECRET);
   }
