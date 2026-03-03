@@ -82,7 +82,7 @@ export function createUserRoutes(userService: UserService = new UserService()) {
     const page = c.req.query("page");
     const limit = c.req.query("limit");
     const result = await userService.getAll(page, limit);
-    return successResponse(c, result, 200);
+    return successResponse(c, result, 200, "Users retrieved successfully");
   });
 
   userRoutes.openapi(createUserRoute, async (c) => {

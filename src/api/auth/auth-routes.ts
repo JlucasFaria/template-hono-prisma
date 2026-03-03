@@ -142,7 +142,12 @@ export function createAuthRoutes(
     const accessToken = await generateAccessToken(user);
     const refreshToken = await authService.generateRefreshToken(user.id);
 
-    return successResponse(c, { token: accessToken, refreshToken }, 200);
+    return successResponse(
+      c,
+      { token: accessToken, refreshToken },
+      200,
+      "Login successful",
+    );
   });
 
   // === Refresh Handler ===
@@ -166,6 +171,7 @@ export function createAuthRoutes(
       c,
       { token: accessToken, refreshToken: newRefreshToken },
       200,
+      "Tokens refreshed successfully",
     );
   });
 
