@@ -27,7 +27,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - **STOP and generate the Change Report (see section below)**
    - Wait for explicit user approval before any push
 5. After approval: push and open the PR on GitHub
-6. Only create the next branch after the previous PR is merged and after running `git pull origin main`
+6. After the PR is merged: run `git pull origin main`, then immediately delete the merged branch locally with `git branch -d feature/branch-name`
+7. Only then create the next group's branch
 
 ### Never do
 
@@ -54,8 +55,15 @@ Create or update `Tasks.md` **before starting any implementation** when:
 When the user describes what they want, **before coding**:
 
 1. Analyze the request and decompose it into atomic tasks
-2. Write `Tasks.md` with the format below
-3. **Show Tasks.md to the user and wait for confirmation** before starting
+2. Order the groups by dependency before writing — follow this priority:
+   - **Infrastructure first** (DB migrations, Docker, env config) — no dependencies, everything else builds on top
+   - **Architecture second** (patterns, DI, factories, constants) — establishes the final shape of the code
+   - **Security/behavior changes third** (hardening, validations, error handling) — applied on top of clean architecture
+   - **Tests fourth** (unit + integration) — written against the final, stable code to avoid rewriting
+   - **Observability last** (logging, tracing) — depends on architecture and error handler being finalized
+   - Within each tier, order by: shared utilities before consumers, foundational changes before derived ones
+3. Write `Tasks.md` with the format below — **always in English**
+4. **Show Tasks.md to the user and wait for confirmation** before starting
 
 ### Tasks.md format
 
