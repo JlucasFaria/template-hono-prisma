@@ -371,3 +371,21 @@ describe("User Routes — CORS headers", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).not.toBeNull();
   });
 });
+
+// ─── Security headers ─────────────────────────────────────────────────────────
+
+describe("User Routes — security headers", () => {
+  // Security headers are applied globally, regardless of auth status.
+  // Using an unauthenticated GET so this block has no dependency on `token`.
+  it("should include X-Content-Type-Options: nosniff", async () => {
+    const res = await app.request("/api/users");
+
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+
+  it("should include X-Frame-Options", async () => {
+    const res = await app.request("/api/users");
+
+    expect(res.headers.get("X-Frame-Options")).not.toBeNull();
+  });
+});

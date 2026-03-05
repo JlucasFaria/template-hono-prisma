@@ -270,3 +270,33 @@ describe("Auth Routes — CORS headers", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).not.toBeNull();
   });
 });
+
+// ─── Security headers ─────────────────────────────────────────────────────────
+
+describe("Auth Routes — security headers", () => {
+  it("should include X-Content-Type-Options: nosniff", async () => {
+    const res = await app.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "sec@example.com",
+        password: "Secret1234",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+
+  it("should include X-Frame-Options", async () => {
+    const res = await app.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "sec@example.com",
+        password: "Secret1234",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(res.headers.get("X-Frame-Options")).not.toBeNull();
+  });
+});
