@@ -325,3 +325,23 @@ describe("User Routes", () => {
     });
   });
 });
+
+// ─── CORS headers ────────────────────────────────────────────────────────────
+
+describe("User Routes — CORS headers", () => {
+  it("should include Access-Control-Allow-Origin when Origin header is sent", async () => {
+    const res = await app.request("/api/users", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "cors@example.com",
+        password: "Secret1234",
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "http://localhost:3000",
+      },
+    });
+
+    expect(res.headers.get("Access-Control-Allow-Origin")).not.toBeNull();
+  });
+});
