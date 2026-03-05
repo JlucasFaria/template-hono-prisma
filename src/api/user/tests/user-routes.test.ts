@@ -325,3 +325,67 @@ describe("User Routes", () => {
     });
   });
 });
+
+// ─── Body limit ──────────────────────────────────────────────────────────────
+
+describe("User Routes — body limit", () => {
+  it("should return 413 when request body exceeds 1 MB", async () => {
+    // Build a payload that exceeds the 1 MB body limit
+    const body = JSON.stringify({
+      email: "limit@example.com",
+      password: "Secret1234",
+      name: "A".repeat(1024 * 1024 + 1),
+    });
+
+    const res = await app.request("/api/users", {
+      method: "POST",
+      body,
+      headers: {
+        "Content-Type": "application/json",
+        // Provide Content-Length so the bodyLimit middleware can check it
+        // without having to fully buffer the stream first
+        "Content-Length": String(new TextEncoder().encode(body).length),
+      },
+    });
+
+    expect(res.status).toBe(413);
+  });
+});
+
+// ─── CORS headers ────────────────────────────────────────────────────────────
+
+describe("User Routes — CORS headers", () => {
+  it("should include Access-Control-Allow-Origin when Origin header is sent", async () => {
+    const res = await app.request("/api/users", {
+      method: "POST",
+      body: JSON.stringify({
+        email: "cors@example.com",
+        password: "Secret1234",
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "http://localhost:3000",
+      },
+    });
+
+    expect(res.headers.get("Access-Control-Allow-Origin")).not.toBeNull();
+  });
+});
+
+// ─── Security headers ─────────────────────────────────────────────────────────
+
+describe("User Routes — security headers", () => {
+  // Security headers are applied globally, regardless of auth status.
+  // Using an unauthenticated GET so this block has no dependency on `token`.
+  it("should include X-Content-Type-Options: nosniff", async () => {
+    const res = await app.request("/api/users");
+
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+
+  it("should include X-Frame-Options", async () => {
+    const res = await app.request("/api/users");
+
+    expect(res.headers.get("X-Frame-Options")).not.toBeNull();
+  });
+});
