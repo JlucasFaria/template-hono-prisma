@@ -1,6 +1,7 @@
 // Authentication routes: login, refresh token, and logout
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { sign } from "hono/jwt";
+import { PrismaClientKnownRequestError } from "../../../generated/prisma/runtime/client";
 import { env } from "../../config/env";
 import { ACCESS_TOKEN_TTL_SECONDS } from "../../config/constants";
 import { AuthService } from "./auth-service";
@@ -183,8 +184,15 @@ export function createAuthRoutes(
 
     try {
       await authService.revokeRefreshToken(refreshToken);
-    } catch {
-      // Token doesn't exist — that's fine, treat as already logged out
+    } catch (err) {
+      // P2025 = record not found — token already gone, treat as logged out
+      if (
+        !(
+          err instanceof PrismaClientKnownRequestError && err.code === "P2025"
+        )
+      ) {
+        throw err;
+      }
     }
 
     return successResponse(c, { message: "Logged out successfully" }, 200);
