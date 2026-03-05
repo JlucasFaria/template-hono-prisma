@@ -7,7 +7,7 @@ import prisma from "../../../db/client";
 // returning the token pair. Avoids repeating this setup in every test.
 async function createAndLogin(
   email = "auth@example.com",
-  password = "secret1234",
+  password = "Secret1234",
 ): Promise<{ token: string; refreshToken: string }> {
   await app.request("/api/users", {
     method: "POST",
@@ -50,7 +50,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "auth@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -72,7 +72,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "nonexistent@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -87,7 +87,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "auth@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -105,7 +105,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "nonexistent@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
