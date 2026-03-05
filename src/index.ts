@@ -16,6 +16,7 @@ import {
   rateLimitMiddleware,
   rateLimitCleanupInterval,
 } from "./middlewares/rate-limit";
+import { tokenBlacklistCleanupInterval } from "./middlewares/auth";
 import prisma from "./db/client";
 import {
   RATE_LIMIT_MAX_REQUESTS,
@@ -82,6 +83,7 @@ console.log(`📄 OpenAPI doc:       http://localhost:${port}/doc\n`);
 // Graceful shutdown: disconnect Prisma on SIGINT (Ctrl+C) and SIGTERM (Docker/K8s)
 const shutdown = async () => {
   clearInterval(rateLimitCleanupInterval);
+  clearInterval(tokenBlacklistCleanupInterval);
   await prisma.$disconnect();
   process.exit(0);
 };

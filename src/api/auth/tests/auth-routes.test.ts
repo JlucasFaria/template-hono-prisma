@@ -208,6 +208,27 @@ describe("Auth Routes", () => {
       expect(res.status).toBe(200);
     });
 
+    it("should blacklist the access token so protected routes return 401 after logout", async () => {
+      const { token, refreshToken } = await createAndLogin();
+
+      // Logout sending the access token in the Authorization header
+      await app.request("/api/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // The blacklisted access token must no longer grant access
+      const res = await app.request("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(res.status).toBe(401);
+    });
+
     it("should invalidate the refresh token so it cannot be used after logout", async () => {
       const { refreshToken } = await createAndLogin();
 
