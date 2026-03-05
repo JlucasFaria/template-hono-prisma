@@ -326,6 +326,32 @@ describe("User Routes", () => {
   });
 });
 
+// ─── Body limit ──────────────────────────────────────────────────────────────
+
+describe("User Routes — body limit", () => {
+  it("should return 413 when request body exceeds 1 MB", async () => {
+    // Build a payload that exceeds the 1 MB body limit
+    const body = JSON.stringify({
+      email: "limit@example.com",
+      password: "Secret1234",
+      name: "A".repeat(1024 * 1024 + 1),
+    });
+
+    const res = await app.request("/api/users", {
+      method: "POST",
+      body,
+      headers: {
+        "Content-Type": "application/json",
+        // Provide Content-Length so the bodyLimit middleware can check it
+        // without having to fully buffer the stream first
+        "Content-Length": String(new TextEncoder().encode(body).length),
+      },
+    });
+
+    expect(res.status).toBe(413);
+  });
+});
+
 // ─── CORS headers ────────────────────────────────────────────────────────────
 
 describe("User Routes — CORS headers", () => {
