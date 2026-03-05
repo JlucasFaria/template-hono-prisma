@@ -160,10 +160,9 @@ export function createAuthRoutes(
       return errorResponse(c, "Invalid or expired refresh token", 401);
     }
 
-    await authService.revokeRefreshToken(refreshToken);
-
     const accessToken = await generateAccessToken(storedToken.user);
-    const newRefreshToken = await authService.generateRefreshToken(
+    const newRefreshToken = await authService.rotateRefreshToken(
+      refreshToken,
       storedToken.userId,
     );
 

@@ -41,6 +41,19 @@ export class AuthService {
     await this.prisma.refreshToken.delete({ where: { token } });
   }
 
+  // Atomically revokes oldToken and issues a new one in a single transaction.
+  // Prevents the user from being left without a valid refresh token if the
+  // create step fails after the delete step has already committed.
+  async rotateRefreshToken(oldToken: string, userId: number): Promise<string> {
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.refreshToken.delete({ where: { token: oldToken } });
+      const token = crypto.randomBytes(40).toString("hex");
+      const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+      await tx.refreshToken.create({ data: { token, userId, expiresAt } });
+      return token;
+    });
+  }
+
   // Reserved for "logout all devices" flows (e.g. password change, account compromise)
   async revokeAllUserTokens(userId: number) {
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
