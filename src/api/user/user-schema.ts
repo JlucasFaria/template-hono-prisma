@@ -26,10 +26,17 @@ export const createUserSchema = z
       description: "User name (optional)",
       example: "John Doe",
     }),
-    password: z.string().min(8).openapi({
-      description: "User password",
-      example: "secret123",
-    }),
+    password: z
+      .string()
+      .min(8)
+      .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Must contain at least one number")
+      .openapi({
+        description:
+          "User password (min 8 chars, must include uppercase, lowercase, and a number)",
+        example: "Secret123",
+      }),
   })
   .openapi("CreateUserInput");
 

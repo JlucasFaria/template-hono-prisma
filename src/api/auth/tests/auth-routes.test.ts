@@ -7,7 +7,7 @@ import prisma from "../../../db/client";
 // returning the token pair. Avoids repeating this setup in every test.
 async function createAndLogin(
   email = "auth@example.com",
-  password = "secret1234",
+  password = "Secret1234",
 ): Promise<{ token: string; refreshToken: string }> {
   await app.request("/api/users", {
     method: "POST",
@@ -50,7 +50,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "auth@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -72,7 +72,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "nonexistent@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -87,7 +87,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "auth@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -105,7 +105,7 @@ describe("Auth Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "nonexistent@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -206,6 +206,27 @@ describe("Auth Routes", () => {
       });
 
       expect(res.status).toBe(200);
+    });
+
+    it("should blacklist the access token so protected routes return 401 after logout", async () => {
+      const { token, refreshToken } = await createAndLogin();
+
+      // Logout sending the access token in the Authorization header
+      await app.request("/api/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // The blacklisted access token must no longer grant access
+      const res = await app.request("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(res.status).toBe(401);
     });
 
     it("should invalidate the refresh token so it cannot be used after logout", async () => {

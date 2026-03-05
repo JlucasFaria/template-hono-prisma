@@ -1,7 +1,9 @@
 // Authentication routes: login, refresh token, and logout
 import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { sign } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
+import { PrismaClientKnownRequestError } from "../../../generated/prisma/runtime/client";
 import { env } from "../../config/env";
+import { blacklistToken } from "../../middlewares/auth";
 import { ACCESS_TOKEN_TTL_SECONDS } from "../../config/constants";
 import { AuthService } from "./auth-service";
 import {
@@ -160,12 +162,11 @@ export function createAuthRoutes(
       return errorResponse(c, "Invalid or expired refresh token", 401);
     }
 
-    await authService.revokeRefreshToken(refreshToken);
-
-    const accessToken = await generateAccessToken(storedToken.user);
-    const newRefreshToken = await authService.generateRefreshToken(
+    const newRefreshToken = await authService.rotateRefreshToken(
+      refreshToken,
       storedToken.userId,
     );
+    const accessToken = await generateAccessToken(storedToken.user);
 
     return successResponse(
       c,
@@ -176,16 +177,33 @@ export function createAuthRoutes(
   });
 
   // === Logout Handler ===
-  // NOTE: Stateless JWT limitation — revoking the refresh token prevents new access tokens
-  // from being issued, but the current access token remains valid until it expires (~1h).
-  // For immediate revocation, a token blacklist (e.g. Redis) would be required.
   authRoutes.openapi(logoutRoute, async (c) => {
     const { refreshToken } = c.req.valid("json");
 
     try {
       await authService.revokeRefreshToken(refreshToken);
-    } catch {
-      // Token doesn't exist — that's fine, treat as already logged out
+    } catch (err) {
+      // P2025 = record not found — token already gone, treat as logged out
+      if (
+        !(err instanceof PrismaClientKnownRequestError && err.code === "P2025")
+      ) {
+        throw err;
+      }
+    }
+
+    // Blacklist the access token so it cannot be used after logout.
+    // Best-effort: if the header is absent or the token is already expired, skip.
+    const authHeader = c.req.header("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const accessToken = authHeader.slice(7);
+      try {
+        const payload = (await verify(accessToken, env.JWT_SECRET)) as {
+          exp: number;
+        };
+        blacklistToken(accessToken, payload.exp);
+      } catch {
+        // Token invalid or expired — nothing to blacklist
+      }
     }
 
     return successResponse(c, { message: "Logged out successfully" }, 200);

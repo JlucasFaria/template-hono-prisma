@@ -35,7 +35,7 @@ describe("User Routes", () => {
         body: JSON.stringify({
           email: "test@example.com",
           name: "Test User",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -80,12 +80,38 @@ describe("User Routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("should return 400 when password has no uppercase letter", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          password: "secret1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when password has no number", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          password: "SecretPass",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it("should return 400 when email is invalid", async () => {
       const res = await app.request("/api/users", {
         method: "POST",
         body: JSON.stringify({
           email: "not-an-email",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -99,7 +125,7 @@ describe("User Routes", () => {
         body: JSON.stringify({
           email: "test@example.com",
           name: "A",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -120,7 +146,7 @@ describe("User Routes", () => {
     it("should return 400 when email field is missing", async () => {
       const res = await app.request("/api/users", {
         method: "POST",
-        body: JSON.stringify({ password: "secret1234" }),
+        body: JSON.stringify({ password: "Secret1234" }),
         headers: { "Content-Type": "application/json" },
       });
 
@@ -133,7 +159,7 @@ describe("User Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "duplicate@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -143,7 +169,7 @@ describe("User Routes", () => {
         method: "POST",
         body: JSON.stringify({
           email: "duplicate@example.com",
-          password: "secret1234",
+          password: "Secret1234",
         }),
         headers: { "Content-Type": "application/json" },
       });
@@ -266,7 +292,7 @@ describe("User Routes", () => {
           method: "POST",
           body: JSON.stringify({
             email: `user${i}@example.com`,
-            password: "secret1234",
+            password: "Secret1234",
           }),
           headers: { "Content-Type": "application/json" },
         });
