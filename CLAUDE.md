@@ -355,16 +355,16 @@ The seed is idempotent (`upsert`) and can be run multiple times safely.
 
 Test files:
 
-| File                                               | Type        | Coverage                                                                        |
-| -------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| `src/api/health/tests/health.test.ts`              | Integration | `GET /health` — 200 (DB up), 503 (DB down via DI), CORS, security headers       |
-| `src/api/auth/tests/auth-routes.test.ts`           | Integration | Login, refresh token rotation, logout, token reuse prevention, CORS, sec headers |
-| `src/api/auth/tests/auth-service.test.ts`          | Unit        | `generateRefreshToken`, `validateRefreshToken`, `revokeRefreshToken`            |
-| `src/api/user/tests/user-routes.test.ts`           | Integration | User creation, duplicate detection, auth, pagination, body limit, CORS, sec headers |
-| `src/api/user/tests/user-service.test.ts`          | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`                             |
-| `src/middlewares/tests/error-handler.test.ts`      | Unit        | ZodError → 400, HTTPException, P2002 → 409, P2025 → 404, generic → 500         |
-| `src/middlewares/tests/rate-limit.test.ts`         | Unit        | IP tracking, 429 after limit exceeded, independent buckets per IP               |
-| `src/middlewares/tests/request-id.test.ts`         | Unit        | X-Request-ID presence, 16-char hex format, uniqueness per request               |
+| File                                          | Type        | Coverage                                                                            |
+| --------------------------------------------- | ----------- | ----------------------------------------------------------------------------------- |
+| `src/api/health/tests/health.test.ts`         | Integration | `GET /health` — 200 (DB up), 503 (DB down via DI), CORS, security headers           |
+| `src/api/auth/tests/auth-routes.test.ts`      | Integration | Login, refresh token rotation, logout, token reuse prevention, CORS, sec headers    |
+| `src/api/auth/tests/auth-service.test.ts`     | Unit        | `generateRefreshToken`, `validateRefreshToken`, `revokeRefreshToken`                |
+| `src/api/user/tests/user-routes.test.ts`      | Integration | User creation, duplicate detection, auth, pagination, body limit, CORS, sec headers |
+| `src/api/user/tests/user-service.test.ts`     | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`                                 |
+| `src/middlewares/tests/error-handler.test.ts` | Unit        | ZodError → 400, HTTPException, P2002 → 409, P2025 → 404, generic → 500              |
+| `src/middlewares/tests/rate-limit.test.ts`    | Unit        | IP tracking, 429 after limit exceeded, independent buckets per IP                   |
+| `src/middlewares/tests/request-id.test.ts`    | Unit        | X-Request-ID presence, 16-char hex format, uniqueness per request                   |
 
 ## CI/CD
 
