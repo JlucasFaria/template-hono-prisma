@@ -93,6 +93,19 @@ describe("User Routes", () => {
       expect(res.status).toBe(400);
     });
 
+    it("should return 400 when password has no lowercase letter", async () => {
+      const res = await app.request("/api/users", {
+        method: "POST",
+        body: JSON.stringify({
+          email: "test@example.com",
+          password: "SECRET1234",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it("should return 400 when password has no number", async () => {
       const res = await app.request("/api/users", {
         method: "POST",

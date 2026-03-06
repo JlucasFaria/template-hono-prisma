@@ -97,6 +97,50 @@ describe("AuthService", () => {
     });
   });
 
+  describe("rotateRefreshToken", () => {
+    it("should delete the old token and return a new one", async () => {
+      const oldToken = await authService.generateRefreshToken(userId);
+
+      const newToken = await authService.rotateRefreshToken(oldToken, userId);
+
+      expect(newToken).not.toBe(oldToken);
+      const oldStored = await prisma.refreshToken.findUnique({
+        where: { token: oldToken },
+      });
+      expect(oldStored).toBeNull();
+    });
+
+    it("should persist the new token in the database linked to the user", async () => {
+      const oldToken = await authService.generateRefreshToken(userId);
+
+      const newToken = await authService.rotateRefreshToken(oldToken, userId);
+
+      const newStored = await prisma.refreshToken.findUnique({
+        where: { token: newToken },
+      });
+      expect(newStored).not.toBeNull();
+      expect(newStored?.userId).toBe(userId);
+    });
+
+    it("should set expiresAt on the new token to approximately 7 days from now", async () => {
+      const oldToken = await authService.generateRefreshToken(userId);
+
+      const before = Date.now();
+      const newToken = await authService.rotateRefreshToken(oldToken, userId);
+
+      const newStored = await prisma.refreshToken.findUnique({
+        where: { token: newToken },
+      });
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      expect(newStored!.expiresAt.getTime()).toBeGreaterThanOrEqual(
+        before + sevenDaysMs - 1000,
+      );
+      expect(newStored!.expiresAt.getTime()).toBeLessThanOrEqual(
+        Date.now() + sevenDaysMs + 1000,
+      );
+    });
+  });
+
   describe("revokeAllUserTokens", () => {
     it("should remove all tokens for the given user", async () => {
       await authService.generateRefreshToken(userId);

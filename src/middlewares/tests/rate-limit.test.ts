@@ -82,7 +82,7 @@ describe("rateLimitMiddleware", () => {
     expect(allowedB.status).toBe(200);
   });
 
-  it("should prefer cf-connecting-ip over x-forwarded-for when both are present", async () => {
+  it("should prefer x-forwarded-for over cf-connecting-ip when both are present", async () => {
     const app = createApp(1);
     // Use distinct IPs so they get independent buckets
     const cfIp = uniqueIp();
