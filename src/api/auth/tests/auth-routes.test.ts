@@ -115,6 +115,26 @@ describe("Auth Routes", () => {
 
       expect(body1.error).toBe(body2.error);
     });
+
+    it("should return 400 when email field is missing", async () => {
+      const res = await app.request("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ password: "Secret1234" }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should return 400 when email format is invalid", async () => {
+      const res = await app.request("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: "not-an-email", password: "Secret1234" }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      expect(res.status).toBe(400);
+    });
   });
 
   // ─── POST /api/auth/refresh ──────────────────────────────────────
