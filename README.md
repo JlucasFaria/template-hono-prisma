@@ -1,21 +1,46 @@
+<div align="center">
+
 # template-hono-prisma
 
-A production-ready REST API template built with **Hono**, **Prisma 7**, **Zod 4**, and **Bun**.
+> Production-ready REST API template — JWT auth, OpenAPI docs, structured logging, rate limiting.
 
-Features JWT authentication with refresh token rotation, OpenAPI/Swagger documentation, structured JSON logging, rate limiting, and a PostgreSQL database via Docker.
+[![Bun](https://img.shields.io/badge/Bun-%23000000.svg?style=flat&logo=bun&logoColor=white)](https://bun.sh)
+[![Hono](https://img.shields.io/badge/Hono-E36002?style=flat&logo=hono&logoColor=white)](https://hono.dev)
+[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=flat&logo=Prisma&logoColor=white)](https://prisma.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)](https://postgresql.org)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Stack](#stack)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Environment Variables](#environment-variables)
+- [Commands](#commands)
+- [API Reference](#api-reference)
+- [Database](#database)
+- [Architecture](#architecture)
+- [Testing](#testing)
+- [CI/CD](#cicd)
+- [Security](#security)
+- [Logging](#logging)
 
 ---
 
 ## Stack
 
-| Layer      | Technology                                                  |
-| ---------- | ----------------------------------------------------------- |
-| Runtime    | [Bun](https://bun.sh)                                       |
-| Framework  | [Hono](https://hono.dev) + `@hono/zod-openapi`              |
-| ORM        | [Prisma 7](https://www.prisma.io) with `@prisma/adapter-pg` |
-| Validation | [Zod 4](https://zod.dev)                                    |
-| Database   | PostgreSQL 16 (Docker)                                      |
-| Language   | TypeScript (strict mode)                                    |
+| Layer      | Technology                                           |
+| ---------- | ---------------------------------------------------- |
+| Runtime    | [Bun](https://bun.sh)                                |
+| Framework  | [Hono](https://hono.dev) + `@hono/zod-openapi`       |
+| ORM        | [Prisma 7](https://prisma.io) + `@prisma/adapter-pg` |
+| Validation | [Zod 4](https://zod.dev)                             |
+| Database   | PostgreSQL 16 (Docker)                               |
+| Language   | TypeScript (strict mode)                             |
 
 ---
 
@@ -26,9 +51,9 @@ Features JWT authentication with refresh token rotation, OpenAPI/Swagger documen
 
 ---
 
-## Getting Started
+## Quick Start
 
-### 1. Clone and install
+**1. Clone and install**
 
 ```bash
 git clone <repo-url>
@@ -36,33 +61,15 @@ cd template-hono-prisma
 bun install
 ```
 
-### 2. Configure environment variables
+**2. Configure environment**
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Fill in your values — see [Environment Variables](#environment-variables) for details.
 
-```env
-# Docker / PostgreSQL
-DATABASE_DB="mydb"
-DATABASE_USER="postgres"
-DATABASE_PASSWORD="your_password_here"
-
-# Prisma
-DATABASE_URL="postgresql://postgres:your_password_here@localhost:5432/mydb"
-
-# Auth
-JWT_SECRET="replace_with_a_random_string_of_at_least_32_characters"
-
-# Server
-PORT="3000"
-NODE_ENV="development"
-CORS_ORIGIN="*"
-```
-
-### 3. Start the database and run migrations
+**3. Start the database and run migrations**
 
 ```bash
 bun run db:up       # Start PostgreSQL container
@@ -70,32 +77,52 @@ bun run db:migrate  # Run Prisma migrations
 bun run db:seed     # (Optional) Seed with sample users
 ```
 
-### 4. Start the server
+**4. Start the server**
 
 ```bash
 bun run dev         # With hot reload
-# or
-bun run dev:all     # Start DB container + dev server in one command
+bun run dev:all     # Start DB + server in one command
 ```
 
-The server will be available at `http://localhost:3000`.
+The API will be available at `http://localhost:3000`.
+
+| URL                            | Description  |
+| ------------------------------ | ------------ |
+| `http://localhost:3000/ui`     | Swagger UI   |
+| `http://localhost:3000/doc`    | OpenAPI JSON |
+| `http://localhost:3000/health` | Health check |
 
 ---
 
 ## Environment Variables
 
-| Variable            | Description                                            |
-| ------------------- | ------------------------------------------------------ |
-| `DATABASE_URL`      | PostgreSQL connection string (validated as URL)        |
-| `JWT_SECRET`        | Signing key, minimum 32 characters                     |
-| `PORT`              | Server port (default: `3000`)                          |
-| `NODE_ENV`          | `development` \| `test` \| `production`                |
-| `CORS_ORIGIN`       | Allowed CORS origin(s) — `"*"` or comma-separated URLs |
-| `DATABASE_DB`       | Database name (used by Docker Compose)                 |
-| `DATABASE_USER`     | Database user (used by Docker Compose)                 |
-| `DATABASE_PASSWORD` | Database password (used by Docker Compose)             |
+| Variable            | Description                              |
+| ------------------- | ---------------------------------------- |
+| `DATABASE_URL`      | PostgreSQL connection string             |
+| `JWT_SECRET`        | Signing key — minimum 32 characters      |
+| `PORT`              | Server port (default: `3000`)            |
+| `NODE_ENV`          | `development` \| `test` \| `production`  |
+| `CORS_ORIGIN`       | `"*"` or comma-separated allowed origins |
+| `DATABASE_DB`       | Database name (Docker Compose)           |
+| `DATABASE_USER`     | Database user (Docker Compose)           |
+| `DATABASE_PASSWORD` | Database password (Docker Compose)       |
 
-Validation is done at startup via Zod (`src/config/env.ts`). The app crashes immediately if any variable is invalid or missing.
+```env
+# .env.example
+DATABASE_DB="mydb"
+DATABASE_USER="postgres"
+DATABASE_PASSWORD="your_password_here"
+DATABASE_URL="postgresql://postgres:your_password_here@localhost:5432/mydb"
+
+JWT_SECRET="replace_with_a_random_string_of_at_least_32_characters"
+
+PORT="3000"
+NODE_ENV="development"
+CORS_ORIGIN="*"
+```
+
+> [!NOTE]
+> All variables are validated at startup via Zod. The server refuses to start if any required variable is missing or malformed.
 
 ---
 
@@ -103,20 +130,20 @@ Validation is done at startup via Zod (`src/config/env.ts`). The app crashes imm
 
 ```bash
 # Development
-bun run dev              # Start server with hot reload (bun --watch)
+bun run dev              # Start with hot reload
 bun run dev:all          # Start DB container + dev server
-bun run start            # Start server without watch mode (production)
+bun run start            # Production start (no watch)
 
 # Database
-bun run db:up            # Start PostgreSQL container (docker compose up -d)
-bun run db:stop          # Stop container (preserves data)
+bun run db:up            # Start PostgreSQL container
+bun run db:stop          # Stop container (data preserved)
 bun run db:down          # Stop and remove container
-bun run db:migrate       # Run Prisma migrations (prisma migrate dev)
-bun run db:migrate:prod  # Apply pending migrations non-interactively (prisma migrate deploy)
-bun run db:generate      # Generate Prisma client to generated/prisma/
+bun run db:migrate       # Run pending migrations
+bun run db:migrate:prod  # Deploy migrations (non-interactive)
+bun run db:generate      # Regenerate Prisma client
 bun run db:seed          # Seed database with sample data
 bun run db:studio        # Open Prisma Studio GUI
-bun run db:reset         # Full reset: destroy volume, recreate, migrate, seed
+bun run db:reset         # Full reset: drop volume → migrate → seed
 
 # Testing
 bun run test             # Run all tests
@@ -126,91 +153,69 @@ bun run test:watch       # Run tests in watch mode
 bun run lint             # ESLint check
 bun run lint:fix         # ESLint auto-fix
 bun run format           # Prettier format
-bun run format:check     # Prettier check only (used in CI)
+bun run format:check     # Prettier check (CI)
 ```
 
 ---
 
 ## API Reference
 
-### Base URL
+### Endpoints
 
-```
-http://localhost:3000
-```
-
-### Special Endpoints
-
-| Endpoint      | Description                          |
-| ------------- | ------------------------------------ |
-| `GET /`       | Health check (plain text)            |
-| `GET /health` | Detailed health check with DB status |
-| `GET /ui`     | Swagger UI                           |
-| `GET /doc`    | OpenAPI JSON spec                    |
-
-### Auth Endpoints
-
-| Method | Path                | Auth            | Description                                   |
-| ------ | ------------------- | --------------- | --------------------------------------------- |
-| `POST` | `/api/auth/login`   | Public          | Login with email + password                   |
-| `POST` | `/api/auth/refresh` | Public          | Rotate refresh token, get new token pair      |
-| `POST` | `/api/auth/logout`  | Optional Bearer | Revoke refresh token + blacklist access token |
-
-### User Endpoints
-
-| Method | Path         | Auth       | Description                      |
-| ------ | ------------ | ---------- | -------------------------------- |
-| `POST` | `/api/users` | Public     | Create a new user (registration) |
-| `GET`  | `/api/users` | Bearer JWT | List all users (paginated)       |
+| Method | Path                | Auth              | Description               |
+| ------ | ------------------- | ----------------- | ------------------------- |
+| `GET`  | `/health`           | —                 | Server + DB health check  |
+| `GET`  | `/ui`               | —                 | Swagger UI                |
+| `GET`  | `/doc`              | —                 | OpenAPI JSON spec         |
+| `POST` | `/api/auth/login`   | Public            | Login, returns token pair |
+| `POST` | `/api/auth/refresh` | Public            | Rotate refresh token      |
+| `POST` | `/api/auth/logout`  | Bearer (optional) | Revoke tokens             |
+| `POST` | `/api/users`        | Public            | Register a new user       |
+| `GET`  | `/api/users`        | Bearer JWT        | List users (paginated)    |
 
 ### Authentication Flow
 
 ```
-POST /api/auth/login
-  Body: { "email": "...", "password": "..." }
-  Response: { "token": "<access_token>", "refreshToken": "<refresh_token>" }
+1. Login
+   POST /api/auth/login
+   Body:     { "email": "...", "password": "..." }
+   Response: { "token": "<access_token>", "refreshToken": "<refresh_token>" }
 
-# Use access token in protected requests:
-Authorization: Bearer <access_token>
+2. Authenticated request
+   Authorization: Bearer <access_token>
 
-# When access token expires, rotate it:
-POST /api/auth/refresh
-  Body: { "refreshToken": "<refresh_token>" }
-  Response: { "token": "<new_access_token>", "refreshToken": "<new_refresh_token>" }
+3. Refresh (when access token expires)
+   POST /api/auth/refresh
+   Body:     { "refreshToken": "<refresh_token>" }
+   Response: { "token": "<new_access>", "refreshToken": "<new_refresh>" }
 
-# Logout:
-POST /api/auth/logout
-  Body: { "refreshToken": "<refresh_token>" }
-  Headers: Authorization: Bearer <access_token>  (optional, blacklists access token)
+4. Logout
+   POST /api/auth/logout
+   Body:    { "refreshToken": "<refresh_token>" }
+   Headers: Authorization: Bearer <access_token>   ← optional, blacklists it immediately
 ```
 
-**Token TTLs:**
-
-- Access token: 1 hour
-- Refresh token: 7 days (rotated on every use)
-
-### Pagination
-
-Paginated endpoints accept `?page=1&limit=10` query parameters.
-
-- Default: page 1, limit 10
-- Maximum limit: 100
-- Non-numeric values fall back to defaults safely
+**Token TTLs:** access token = **1 hour** · refresh token = **7 days** (rotated on every use)
 
 ### Response Format
 
-All endpoints return a consistent JSON envelope:
+Every endpoint returns the same JSON envelope:
 
-```json
+```jsonc
 // Success
-{ "success": true, "data": { ... }, "message": "Description" }
+{ "success": true, "data": { ... }, "message": "..." }
 
 // Error
-{ "success": false, "error": "Error message" }
+{ "success": false, "error": "..." }
 
 // Validation error (400)
 { "success": false, "error": "Validation failed", "details": [ ... ] }
 ```
+
+### Pagination
+
+Paginated endpoints accept `?page=1&limit=10`.
+Default: page `1`, limit `10`, max `100`. Non-numeric values fall back to defaults.
 
 ---
 
@@ -220,31 +225,31 @@ All endpoints return a consistent JSON envelope:
 
 **User**
 
-| Field       | Type       | Notes                                     |
-| ----------- | ---------- | ----------------------------------------- |
-| `id`        | `Int`      | Auto-increment primary key                |
-| `email`     | `String`   | Unique                                    |
-| `password`  | `String`   | Hashed with argon2id (via `Bun.password`) |
-| `name`      | `String?`  | Optional                                  |
-| `createdAt` | `DateTime` | Auto-set                                  |
-| `updatedAt` | `DateTime` | Auto-updated                              |
+| Field       | Type       | Notes                                        |
+| ----------- | ---------- | -------------------------------------------- |
+| `id`        | `Int`      | Auto-increment PK                            |
+| `email`     | `String`   | Unique                                       |
+| `password`  | `String`   | argon2id via `Bun.password` — never returned |
+| `name`      | `String?`  | Optional                                     |
+| `createdAt` | `DateTime` | Auto-set                                     |
+| `updatedAt` | `DateTime` | Auto-updated                                 |
 
 **RefreshToken**
 
 | Field        | Type        | Notes                      |
 | ------------ | ----------- | -------------------------- |
-| `id`         | `Int`       | Auto-increment primary key |
+| `id`         | `Int`       | Auto-increment PK          |
 | `token`      | `String`    | Unique, 40 random bytes    |
 | `userId`     | `Int`       | FK → User (cascade delete) |
 | `expiresAt`  | `DateTime`  |                            |
 | `createdAt`  | `DateTime`  | Auto-set                   |
-| `lastUsedAt` | `DateTime?` | Updated on use             |
+| `lastUsedAt` | `DateTime?` | Updated on each rotation   |
 
-Password is never returned from any API endpoint (enforced via Prisma `select`).
+### Seed Users
 
-### Seed Data
-
-Run `bun run db:seed` to populate the database with 3 default users:
+```bash
+bun run db:seed
+```
 
 | Email                | Password    |
 | -------------------- | ----------- |
@@ -252,7 +257,7 @@ Run `bun run db:seed` to populate the database with 3 default users:
 | `alice@template.com` | `alice1234` |
 | `bob@template.com`   | `bob12345`  |
 
-The seed is idempotent (`upsert`) and can be run multiple times safely.
+The seed uses `upsert` and is safe to run multiple times.
 
 ---
 
@@ -262,55 +267,45 @@ The seed is idempotent (`upsert`) and can be run multiple times safely.
 
 ```
 Request
-  → secureHeaders
-  → requestIdMiddleware (X-Request-ID)
-  → structuredLogger
+  → secureHeaders           (X-Frame-Options, X-Content-Type-Options, …)
+  → requestIdMiddleware      (X-Request-ID header)
+  → structuredLogger         (JSON log per request)
   → cors
-  → rateLimitMiddleware (/api/* only, 100 req/60s per IP)
-  → bodyLimit (/api/* only, 1MB max)
+  → rateLimitMiddleware      (/api/* — 100 req / 60s per IP, in-memory)
+  → bodyLimit                (/api/* — 1 MB max)
   → Route handler
   → Response
-       ↓
+        ↓
   errorHandler (onError)
 ```
 
-### Directory Structure
+### Project Structure
 
 ```
 src/
-├── index.ts                        # Entry point: middleware registration, routes, OpenAPI config
+├── index.ts                    # Entry point, middleware + route wiring
 ├── config/
-│   ├── env.ts                      # Zod-validated environment variables
-│   └── constants.ts                # Tuneable values (rate limit, body limit, pagination, token TTLs)
+│   ├── env.ts                  # Zod-validated env vars
+│   └── constants.ts            # Rate limit, body limit, token TTLs, pagination defaults
 ├── db/
-│   └── client.ts                   # Prisma client singleton (pg adapter, pool: max 10, idle 30s)
+│   └── client.ts               # Prisma singleton (pg adapter, pool max 10)
 ├── middlewares/
-│   ├── auth.ts                     # JWT middleware, getAuthPayload(), in-memory token blacklist
-│   ├── error-handler.ts            # Global error handler (Zod, HTTP, Prisma, unknown)
-│   ├── rate-limit.ts               # In-memory IP-based rate limiter
-│   ├── request-id.ts               # X-Request-ID response header
+│   ├── auth.ts                 # JWT middleware + in-memory token blacklist
+│   ├── error-handler.ts        # Global error → structured response
+│   ├── rate-limit.ts           # IP-based rate limiter
+│   ├── request-id.ts           # X-Request-ID
 │   └── tests/
 ├── schemas/
-│   ├── response.ts                 # successResponseSchema(), errorResponseSchema
-│   └── pagination.ts               # paginationQuerySchema, paginationMetaSchema
+│   ├── response.ts             # Shared response schemas
+│   └── pagination.ts           # Pagination query + meta schemas
 ├── utils/
-│   ├── response.ts                 # successResponse(), errorResponse() helpers
-│   ├── pagination.ts               # getPaginationParams(), createPaginationMeta()
-│   └── logger.ts                   # Structured JSON logger middleware
+│   ├── response.ts             # successResponse() / errorResponse()
+│   ├── pagination.ts           # getPaginationParams() / createPaginationMeta()
+│   └── logger.ts               # Structured JSON logger
 └── api/
-    ├── auth/
-    │   ├── auth-schema.ts
-    │   ├── auth-service.ts         # Refresh token CRUD
-    │   ├── auth-routes.ts          # Factory: createAuthRoutes(userRepo)
-    │   └── tests/
-    ├── health/
-    │   ├── health-routes.ts
-    │   └── tests/
-    └── user/
-        ├── user-schema.ts
-        ├── user-service.ts         # CRUD, password hashing
-        ├── user-routes.ts          # Factory: createUserRoutes()
-        └── tests/
+    ├── auth/                   # Login, refresh, logout
+    ├── health/                 # GET /health
+    └── user/                   # Registration + paginated list
 
 prisma/
 ├── schema.prisma
@@ -319,75 +314,76 @@ prisma/
 
 ### Key Design Decisions
 
-**Dependency Injection via factory functions** — Routes are exported as factory functions (`createAuthRoutes`, `createUserRoutes`) rather than singletons. This allows injecting mock services in tests without monkey-patching globals.
+**Factory functions for routes** — `createAuthRoutes(userRepo)` and `createUserRoutes()` accept dependencies as arguments instead of importing singletons. Tests inject fakes without monkey-patching.
 
-**Auth decoupled from User** — `auth-routes.ts` depends on `IUserAuthRepository` (an interface with only `findByEmail` and `verifyPassword`), not on `UserService` directly. `UserService` satisfies the interface via structural typing. Wiring happens at the composition root (`index.ts`).
+**Auth decoupled from User** — `auth-routes.ts` depends only on `IUserAuthRepository` (`findByEmail` + `verifyPassword`). `UserService` satisfies it via structural typing. Wiring happens in `index.ts`.
 
-**Token blacklist** — On logout, access tokens are added to an in-memory set (keyed by token, TTL = token expiry). This makes logout immediate without a DB query on every request. Note: the blacklist is cleared on server restart — use Redis for persistent revocation across restarts/instances.
+**Refresh token rotation** — every `/refresh` call revokes the old token and issues a new one. Replaying a revoked token returns `401`.
 
-**Refresh token rotation** — Every `/refresh` call revokes the old token and issues a new one. Reusing a revoked token returns 401.
+**In-memory token blacklist** — on logout, the access token is stored in memory until its natural expiry. Avoids a DB query on every authenticated request. Resets on server restart (use Redis for persistent, multi-instance revocation).
 
-**Error handling** — A single global `onError` handler maps all error types to structured responses:
+**Error mapping**
 
-| Error type                         | Status          | Response                               |
-| ---------------------------------- | --------------- | -------------------------------------- |
-| `ZodError`                         | 400             | Field-level validation details         |
-| `HTTPException`                    | Matching status | Error message                          |
-| Prisma `P2002` (unique constraint) | 409             | `"<field> already in use"`             |
-| Prisma `P2025` (not found)         | 404             | Not found message                      |
-| Unknown errors                     | 500             | Generic message (hidden in production) |
+| Error                              | Status   | Response                       |
+| ---------------------------------- | -------- | ------------------------------ |
+| `ZodError`                         | `400`    | Field-level validation details |
+| `HTTPException`                    | Matching | Error message                  |
+| Prisma `P2002` (unique constraint) | `409`    | `"<field> already in use"`     |
+| Prisma `P2025` (record not found)  | `404`    | Not found message              |
+| Unknown                            | `500`    | Generic (hidden in production) |
 
 ---
 
 ## Testing
 
-Tests run against a **real PostgreSQL database** (not mocks). Start the DB before running tests.
+Tests hit a **real PostgreSQL database** — no mocks at the DB layer.
 
 ```bash
-bun run db:up       # Ensure DB is running
-bun run db:migrate  # Ensure schema is up to date
+bun run db:up       # DB must be running
+bun run db:migrate  # Schema must be current
 bun run test
 ```
 
-### Test Coverage
-
-| File                                          | Type        | What it covers                                                                              |
+| File                                          | Type        | Coverage                                                                                    |
 | --------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------- |
-| `src/api/health/tests/health.test.ts`         | Integration | `GET /health` — 200 (DB up), 503 (DB down via DI)                                           |
-| `src/api/auth/tests/auth-routes.test.ts`      | Integration | Login, refresh rotation, logout, token reuse prevention                                     |
+| `src/api/health/tests/health.test.ts`         | Integration | `GET /health` — 200 + 503 (DB down via DI)                                                  |
+| `src/api/auth/tests/auth-routes.test.ts`      | Integration | Login, refresh rotation, logout, token reuse                                                |
 | `src/api/auth/tests/auth-service.test.ts`     | Unit        | `generateRefreshToken`, `validateRefreshToken`, `revokeRefreshToken`, `revokeAllUserTokens` |
-| `src/api/user/tests/user-routes.test.ts`      | Integration | User creation, duplicate detection, auth, pagination, body limit                            |
+| `src/api/user/tests/user-routes.test.ts`      | Integration | Registration, duplicate detection, auth, pagination, body limit                             |
 | `src/api/user/tests/user-service.test.ts`     | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`                                         |
-| `src/middlewares/tests/error-handler.test.ts` | Unit        | ZodError, HTTPException, P2002, P2025, generic                                              |
-| `src/middlewares/tests/rate-limit.test.ts`    | Unit        | IP tracking, 429 after limit, independent buckets per IP                                    |
-| `src/middlewares/tests/request-id.test.ts`    | Unit        | X-Request-ID presence, hex format, uniqueness                                               |
+| `src/middlewares/tests/error-handler.test.ts` | Unit        | ZodError, HTTPException, P2002, P2025, generic 500                                          |
+| `src/middlewares/tests/rate-limit.test.ts`    | Unit        | IP tracking, 429 after limit, independent buckets                                           |
+| `src/middlewares/tests/request-id.test.ts`    | Unit        | Header presence, hex format, uniqueness                                                     |
 
 ---
 
 ## CI/CD
 
-Two GitHub Actions workflows run on every push/PR to `main`:
+Two GitHub Actions workflows trigger on every push and PR to `main`:
 
-**`linting.yaml`** — Installs dependencies, generates Prisma client, runs `format:check` and ESLint.
+**`linting.yaml`** — `bun install` → `prisma generate` → `format:check` → ESLint
 
-**`tests.yaml`** — Spins up a PostgreSQL 16 service container, runs `prisma db push`, then `bun run test`.
+**`tests.yaml`** — Spins up a PostgreSQL 16 service container with native health checks (`pg_isready`), runs `prisma db push`, then `bun test`.
 
 ---
 
-## Security Notes
+## Security
 
-- `JWT_SECRET` must be at least 32 characters. Use a cryptographically random value in production.
-- `CORS_ORIGIN` should be set to your actual domain in production. Never use `"*"` in production.
-- Rate limiting uses `X-Forwarded-For` (first IP). Configure your reverse proxy to strip client-provided values in production to prevent spoofing.
-- The token blacklist and rate limit store are in-memory. They reset on server restart. For multi-instance deployments, replace both with Redis.
-- Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`) are applied globally via `hono/secure-headers`.
-- Passwords are hashed with argon2id via `Bun.password.hash()` and are never returned from any endpoint.
+> [!WARNING]
+> Review these settings before deploying to production.
+
+- **`JWT_SECRET`** — use a cryptographically random value of at least 32 characters. Never commit it to version control.
+- **`CORS_ORIGIN`** — set to your actual domain. Never use `"*"` in production.
+- **Rate limiting** — keyed on `X-Forwarded-For` (first IP). Configure your reverse proxy to strip client-provided values to prevent spoofing.
+- **Token blacklist + rate limit store** — in-memory. For multi-instance or restartable deployments, replace with Redis.
+- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` applied globally via `hono/secure-headers`.
+- **Passwords** — hashed with argon2id (`Bun.password.hash()`). Never included in any API response.
 
 ---
 
 ## Logging
 
-Every request emits a structured JSON line to stdout:
+Every request produces a structured JSON log line on stdout:
 
 ```json
 {
@@ -400,15 +396,4 @@ Every request emits a structured JSON line to stdout:
 }
 ```
 
-Unexpected server errors are logged via `console.error` with the full stack trace and `requestId`. These structured logs integrate with log aggregation platforms (Datadog, CloudWatch, Grafana Loki).
-
----
-
-## Graceful Shutdown
-
-The server listens for `SIGINT` (Ctrl+C) and `SIGTERM` (Docker/Kubernetes). On shutdown:
-
-1. Clears the rate limit cleanup interval
-2. Clears the token blacklist cleanup interval
-3. Disconnects the Prisma client
-4. Exits cleanly
+Server errors are logged with the full stack trace and `requestId` via `console.error`. Compatible with Datadog, CloudWatch, and Grafana Loki out of the box.
