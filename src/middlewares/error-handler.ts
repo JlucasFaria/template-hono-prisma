@@ -49,7 +49,14 @@ export const errorHandler: ErrorHandler = (err, c) => {
   const errorMessage = err instanceof Error ? err.message : String(err);
   const errorStack = err instanceof Error ? err.stack : undefined;
 
-  console.error(`[Fatal Error]: ${errorStack || errorMessage}`);
+  const requestId = c.get("requestId" as never) as string | undefined;
+  console.error(
+    JSON.stringify({
+      requestId,
+      error: errorStack || errorMessage,
+      timestamp: new Date().toISOString(),
+    }),
+  );
   return c.json(
     {
       success: false,

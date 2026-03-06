@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - **STOP and generate the Change Report (see section below)**
    - Wait for explicit user approval
 5. After approval: the **user** handles `git push` and opening the PR on GitHub
-6. After the PR is merged: run `git pull origin main`, then immediately delete the merged branch locally with `git branch -d feature/branch-name`
+6. After the PR is merged: run `git checkout main && git pull origin main`, then delete the merged branch with `git branch -D feature/branch-name` (use `-D` because GitHub squash/rebase merges create new commit hashes, making `-d` think the branch is unmerged)
 7. Only then create the next group's branch
 
 ### Never do
@@ -202,7 +202,7 @@ Request → secureHeaders → requestIdMiddleware → logger → cors → rateLi
 - Rate limiting: 100 requests per 60-second window per IP, applied to `/api/*` only (in-memory store)
 - Body limit: 1MB max, applied to `/api/*` only
 - `X-Forwarded-For` first IP (`.split(",")[0]`) is used for rate-limit key — can be spoofed; configure your reverse proxy to strip client-provided values in production. In dev (no proxy), all requests fall into the `"unknown"` bucket
-- Graceful shutdown: listens for `SIGINT`/`SIGTERM`, clears rate-limit cleanup interval, disconnects Prisma, then exits cleanly
+- Graceful shutdown: listens for `SIGINT`/`SIGTERM`, clears rate-limit and token-blacklist cleanup intervals, disconnects Prisma, then exits cleanly
 
 ### Special Endpoints
 
@@ -215,13 +215,19 @@ Request → secureHeaders → requestIdMiddleware → logger → cors → rateLi
 ```
 src/
 ├── index.ts                        # App entry, middleware registration, OpenAPI config
-├── config/env.ts                   # Zod-validated environment variables
+├── config/
+│   ├── env.ts                      # Zod-validated environment variables
+│   └── constants.ts                # Single source of truth for tuneable values (rate limit, body limit, pagination, token TTLs)
 ├── db/client.ts                    # Prisma client singleton (pg adapter + pool: max 10, idle 30s, connect timeout 5s)
 ├── middlewares/
-│   ├── auth.ts                     # JWT middleware + getAuthPayload() helper
+│   ├── auth.ts                     # JWT middleware + getAuthPayload() + in-memory token blacklist
 │   ├── error-handler.ts            # Global: ZodError, HTTPException, Prisma errors
 │   ├── rate-limit.ts               # In-memory IP-based rate limiter; exports rateLimitCleanupInterval
-│   └── request-id.ts               # X-Request-ID response header (crypto.randomBytes)
+│   ├── request-id.ts               # X-Request-ID response header (crypto.randomBytes)
+│   └── tests/
+│       ├── error-handler.test.ts   # Unit tests for errorHandler (ZodError, HTTPException, P2002, P2025, generic)
+│       ├── rate-limit.test.ts      # Unit tests for rateLimitMiddleware
+│       └── request-id.test.ts      # Unit tests for requestIdMiddleware
 ├── schemas/
 │   ├── response.ts                 # successResponseSchema(schema, name), errorResponseSchema
 │   └── pagination.ts               # paginationQuerySchema, paginationMetaSchema
@@ -234,11 +240,12 @@ src/
     │   ├── auth-service.ts         # Refresh token: generate, validate, revoke
     │   ├── auth-routes.ts          # POST /login, POST /refresh, POST /logout
     │   └── tests/
-    │       └── auth-routes.test.ts # Integration tests (login, refresh, logout flows)
+    │       ├── auth-routes.test.ts # Integration tests (login, refresh, logout flows)
+    │       └── auth-service.test.ts # Unit tests (generateRefreshToken, validateRefreshToken, revoke)
     ├── health/
-    │   ├── health-routes.ts        # GET /health handler (DB connectivity check)
+    │   ├── health-routes.ts        # GET /health handler; accepts optional PrismaClient for DI
     │   └── tests/
-    │       └── health.test.ts      # Integration tests for GET /health
+    │       └── health.test.ts      # Integration tests for GET /health (200 + 503 via DI)
     └── user/
         ├── user-schema.ts          # UserSchema, createUserSchema, paginatedUsersResponseSchema
         ├── user-service.ts         # CRUD, password hashing (Bun.password)
@@ -292,7 +299,7 @@ return errorResponse(c, "Not found", 404);
 
 - `POST /api/auth/login` → returns access token (1h) + refresh token (7d)
 - `POST /api/auth/refresh` → validates refresh token, rotates it (old revoked, new issued), returns new token pair
-- `POST /api/auth/logout` → revokes refresh token (idempotent — succeeds even if token not found). Note: the JWT access token remains valid until its natural expiry (~1h); only the refresh token is revoked. For immediate invalidation, implement a token blacklist (e.g., Redis).
+- `POST /api/auth/logout` → revokes refresh token (idempotent — succeeds even if token not found) and blacklists the access token. Access token is added to an in-memory blacklist (checked by `authMiddleware`) so protected routes immediately return 401. Note: the blacklist is cleared on server restart — use Redis for persistent revocation across restarts/instances.
 - Refresh tokens are stored in DB (can be individually revoked); cascade-deleted when user is deleted
 
 **Password Hashing**: Uses `Bun.password.hash()` (argon2id) and `Bun.password.verify()` in `UserService`. Password is never returned from any API endpoint (enforced via Prisma `select`).
@@ -348,12 +355,16 @@ The seed is idempotent (`upsert`) and can be run multiple times safely.
 
 Test files:
 
-| File                                      | Type        | Coverage                                                         |
-| ----------------------------------------- | ----------- | ---------------------------------------------------------------- |
-| `src/api/health/tests/health.test.ts`     | Integration | `GET /health` — status, timestamp, DB connectivity               |
-| `src/api/auth/tests/auth-routes.test.ts`  | Integration | Login, refresh token rotation, logout, token reuse prevention    |
-| `src/api/user/tests/user-routes.test.ts`  | Integration | User creation, duplicate detection, auth requirement, pagination |
-| `src/api/user/tests/user-service.test.ts` | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`              |
+| File                                               | Type        | Coverage                                                                        |
+| -------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `src/api/health/tests/health.test.ts`              | Integration | `GET /health` — 200 (DB up), 503 (DB down via DI), CORS, security headers       |
+| `src/api/auth/tests/auth-routes.test.ts`           | Integration | Login, refresh token rotation, logout, token reuse prevention, CORS, sec headers |
+| `src/api/auth/tests/auth-service.test.ts`          | Unit        | `generateRefreshToken`, `validateRefreshToken`, `revokeRefreshToken`            |
+| `src/api/user/tests/user-routes.test.ts`           | Integration | User creation, duplicate detection, auth, pagination, body limit, CORS, sec headers |
+| `src/api/user/tests/user-service.test.ts`          | Unit        | `create`, `getAll`, `findByEmail`, `verifyPassword`                             |
+| `src/middlewares/tests/error-handler.test.ts`      | Unit        | ZodError → 400, HTTPException, P2002 → 409, P2025 → 404, generic → 500         |
+| `src/middlewares/tests/rate-limit.test.ts`         | Unit        | IP tracking, 429 after limit exceeded, independent buckets per IP               |
+| `src/middlewares/tests/request-id.test.ts`         | Unit        | X-Request-ID presence, 16-char hex format, uniqueness per request               |
 
 ## CI/CD
 
